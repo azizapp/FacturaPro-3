@@ -93,7 +93,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ initialClient, onSubmit, onCanc
       {...props}
       value={value || ''}
       onChange={(e) => handleInputChange(field, e.target.value)}
-      className={`w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/10 outline-none ${props.className || ''}`}
+      className={`w-full bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/10 outline-none dark:text-slate-200 ${props.className || ''}`}
     />
   );
 
@@ -102,22 +102,22 @@ const ClientForm: React.FC<ClientFormProps> = ({ initialClient, onSubmit, onCanc
       <div className="flex items-center space-x-4 mb-4">
         <button 
           onClick={onCancel} 
-          className="w-10 h-10 flex items-center justify-center rounded-full bg-white border border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-200 shadow-sm transition-all"
+          className="w-10 h-10 flex items-center justify-center rounded-full bg-white dark:bg-[#27354c] border border-slate-200 dark:border-white/10 text-slate-400 hover:text-indigo-600 hover:border-indigo-200 shadow-sm transition-all"
         >
           <i className="fas fa-arrow-left"></i>
         </button>
         <div>
-          <h3 className="text-2xl font-black text-slate-800 tracking-tight">
+          <h3 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight">
             {initialClient ? 'Modifier le Client' : 'Nouveau Compte Client'}
           </h3>
-          <p className="text-sm text-slate-500 font-medium italic">Configuration complète conforme à la base de données centrale.</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400 font-medium italic">Configuration complète conforme à la base de données centrale.</p>
         </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-8 pb-20">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-200 space-y-6">
-            <h4 className="text-xs font-black uppercase text-indigo-600 border-b border-indigo-50 pb-2 flex items-center">
+          <div className="bg-white dark:bg-[#27354c] p-8 rounded-3xl shadow-sm border border-slate-200 dark:border-white/5 space-y-6">
+            <h4 className="text-xs font-black uppercase text-indigo-600 dark:text-indigo-400 border-b border-indigo-50 dark:border-white/5 pb-2 flex items-center">
               <i className="fas fa-id-card mr-2"></i> Identité & Responsables
             </h4>
             <div className="space-y-4">
@@ -125,7 +125,8 @@ const ClientForm: React.FC<ClientFormProps> = ({ initialClient, onSubmit, onCanc
                 {renderInput('name', formData.name, {
                   type: "text",
                   placeholder: "Nom de l'entreprise",
-                  required: true
+                  required: true,
+                  className: "font-bold text-slate-800 dark:text-white"
                 })}
               </InputWrapper>
               <div className="grid grid-cols-2 gap-4">
@@ -139,7 +140,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ initialClient, onSubmit, onCanc
                   <select 
                     value={formData.gamme}
                     onChange={(e) => handleInputChange('gamme', e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/10 outline-none appearance-none"
+                    className="w-full bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/10 outline-none appearance-none dark:text-slate-200"
                   >
                     <option value="">Sélectionner...</option>
                     <option value="Premium">Premium</option>
@@ -154,7 +155,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ initialClient, onSubmit, onCanc
                   placeholder: "user@votreentreprise.com"
                 })}
               </InputWrapper>
-              <div className="flex items-center space-x-3 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+              <div className="flex items-center space-x-3 p-4 bg-slate-50 dark:bg-slate-900/40 rounded-2xl border border-slate-100 dark:border-white/5">
                 <input 
                   type="checkbox" 
                   id="is_blocked"
@@ -162,13 +163,13 @@ const ClientForm: React.FC<ClientFormProps> = ({ initialClient, onSubmit, onCanc
                   onChange={(e) => handleInputChange('is_blocked', e.target.checked)}
                   className="w-5 h-5 rounded border-slate-300 text-rose-500 focus:ring-rose-500"
                 />
-                <label htmlFor="is_blocked" className="text-xs font-bold text-slate-700 uppercase cursor-pointer">Bloquer ce client</label>
+                <label htmlFor="is_blocked" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase cursor-pointer">Bloquer ce client</label>
               </div>
             </div>
           </div>
 
-          <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-200 space-y-6">
-            <h4 className="text-xs font-black uppercase text-emerald-600 border-b border-emerald-50 pb-2 flex items-center">
+          <div className="bg-white dark:bg-[#27354c] p-8 rounded-3xl shadow-sm border border-slate-200 dark:border-white/5 space-y-6">
+            <h4 className="text-xs font-black uppercase text-emerald-600 dark:text-emerald-400 border-b border-emerald-50 dark:border-white/5 pb-2 flex items-center">
               <i className="fas fa-phone-alt mr-2"></i> Coordonnées de Contact
             </h4>
             <div className="space-y-4">
@@ -207,8 +208,8 @@ const ClientForm: React.FC<ClientFormProps> = ({ initialClient, onSubmit, onCanc
             </div>
           </div>
 
-          <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-200 space-y-6 lg:col-span-2">
-            <h4 className="text-xs font-black uppercase text-orange-500 border-b border-orange-50 pb-2 flex items-center">
+          <div className="bg-white dark:bg-[#27354c] p-8 rounded-3xl shadow-sm border border-slate-200 dark:border-white/5 space-y-6 lg:col-span-2">
+            <h4 className="text-xs font-black uppercase text-orange-500 dark:text-orange-400 border-b border-orange-50 dark:border-white/5 pb-2 flex items-center">
               <i className="fas fa-map-marked-alt mr-2"></i> Localisation Géographique
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -244,11 +245,11 @@ const ClientForm: React.FC<ClientFormProps> = ({ initialClient, onSubmit, onCanc
           </div>
         </div>
 
-        <div className="flex justify-end space-x-4 pt-8 border-t border-slate-100">
+        <div className="flex justify-end space-x-4 pt-8 border-t border-slate-100 dark:border-white/5">
           <button 
             type="button" 
             onClick={onCancel}
-            className="px-10 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] hover:text-slate-600 transition-colors"
+            className="px-10 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] hover:text-slate-600 dark:hover:text-white transition-colors"
           >
             Abandonner
           </button>
