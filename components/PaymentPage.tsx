@@ -12,12 +12,17 @@ const PaymentPage: React.FC<PaymentPageProps> = ({ invoices, clients, onPaymentA
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [expandedInvoiceId, setExpandedInvoiceId] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState<string>('');
   
   const [amount, setAmount] = useState<number>(0);
   const [method, setMethod] = useState<PaymentMethod>(PaymentMethod.CHECK);
   const [note, setNote] = useState('');
 
-  const pendingInvoices = invoices.filter(inv => inv.status !== InvoiceStatus.PAID);
+  const pendingInvoices = invoices.filter(inv => {
+    const matchesStatus = inv.status !== InvoiceStatus.PAID;
+    const matchesSearch = searchTerm.trim() === '' || String(inv.number).toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesStatus && matchesSearch;
+  });
   const getClientName = (id: string) => clients.find(c => c.id === id)?.name || 'Client inconnu';
   const calculatePaid = (invoice: Invoice) => (invoice.payments || []).reduce((s, p) => s + p.amount, 0);
   const calculateRemaining = (invoice: Invoice) => invoice.grandTotal - calculatePaid(invoice);
@@ -47,8 +52,18 @@ const PaymentPage: React.FC<PaymentPageProps> = ({ invoices, clients, onPaymentA
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       <div className="bg-white dark:bg-[#27354c] rounded-3xl shadow-sm border border-slate-200 dark:border-white/5 overflow-hidden">
-        <div className="p-6 border-b border-slate-100 dark:border-white/5 bg-slate-50/30 dark:bg-slate-900/40">
+        <div className="p-6 border-b border-slate-100 dark:border-white/5 bg-slate-50/30 dark:bg-slate-900/40 space-y-4">
           <h3 className="text-lg font-semibold text-slate-800 dark:text-white uppercase tracking-tight">Gestion des Encaissements</h3>
+          <div className="relative max-w-xs">
+            <i className="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 text-xs"></i>
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Rechercher par n° de facture..."
+              className="w-full pl-8 pr-3 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-800 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:text-white placeholder-slate-400 dark:placeholder-slate-500"
+            />
+          </div>
         </div>
 
         <div className="overflow-x-auto">
@@ -63,7 +78,7 @@ const PaymentPage: React.FC<PaymentPageProps> = ({ invoices, clients, onPaymentA
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50 dark:divide-white/5">
-              {pendingInvoices.map((invoice) => {
+              {pendingInvoices.length > 0 ? pendingInvoices.map((invoice) => {
                 const paid = calculatePaid(invoice);
                 const remaining = calculateRemaining(invoice);
                 return (
@@ -77,7 +92,14 @@ const PaymentPage: React.FC<PaymentPageProps> = ({ invoices, clients, onPaymentA
                     </td>
                   </tr>
                 );
-              })}
+              }) : (
+                <tr>
+                  <td colSpan={5} className="px-6 py-8 text-center text-slate-500 dark:text-slate-400 text-sm">
+                    <i className="fas fa-inbox text-2xl mb-2 block opacity-50"></i>
+                    Aucune facture ne correspond à votre recherche
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
