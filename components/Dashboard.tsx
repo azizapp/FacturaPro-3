@@ -19,6 +19,11 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, clients }) => {
   const { theme } = useAppContext();
   const [aiAnalysis, setAiAnalysis] = useState<AiAnalysisResult | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const totalHt = invoices.reduce((acc, inv) => acc + (inv.subtotal || 0), 0);
   const totalTva = invoices.reduce((acc, inv) => acc + (inv.tvaTotal || 0), 0);
@@ -142,32 +147,34 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, clients }) => {
               <p className="text-xs text-slate-400 mt-1">Revenu TTC mensuel cumulé</p>
             </div>
           </div>
-          <div className="h-80 w-full min-h-[320px]">
-            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-              <AreaChart data={monthlyData}>
-                <defs>
-                  <linearGradient id="colorAmount" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.1} />
-                    <stop offset="95%" stopColor="#4f46e5" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#334155' : '#f1f5f9'} />
-                <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} dy={15} />
-                <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(val) => `${(val / 1000).toFixed(0)}k`} />
-                <Tooltip
-                  contentStyle={{
-                    borderRadius: '12px',
-                    border: 'none',
-                    backgroundColor: isDark ? '#1e293b' : '#ffffff',
-                    color: isDark ? '#f8fafc' : '#1e293b',
-                    boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)',
-                    padding: '16px'
-                  }}
-                  itemStyle={{ color: '#4f46e5', fontWeight: '800', fontSize: '12px' }}
-                />
-                <Area type="monotone" dataKey="amount" stroke="#4f46e5" strokeWidth={3} fillOpacity={1} fill="url(#colorAmount)" animationDuration={1500} />
-              </AreaChart>
-            </ResponsiveContainer>
+          <div className="h-80 w-full min-h-[320px] relative block">
+            {mounted && (
+              <ResponsiveContainer width="100%" height="100%" minWidth={0} debounce={100}>
+                <AreaChart data={monthlyData}>
+                  <defs>
+                    <linearGradient id="colorAmount" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.1} />
+                      <stop offset="95%" stopColor="#4f46e5" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#334155' : '#f1f5f9'} />
+                  <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} dy={15} />
+                  <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(val) => `${(val / 1000).toFixed(0)}k`} />
+                  <Tooltip
+                    contentStyle={{
+                      borderRadius: '12px',
+                      border: 'none',
+                      backgroundColor: isDark ? '#1e293b' : '#ffffff',
+                      color: isDark ? '#f8fafc' : '#1e293b',
+                      boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)',
+                      padding: '16px'
+                    }}
+                    itemStyle={{ color: '#4f46e5', fontWeight: '800', fontSize: '12px' }}
+                  />
+                  <Area type="monotone" dataKey="amount" stroke="#4f46e5" strokeWidth={3} fillOpacity={1} fill="url(#colorAmount)" animationDuration={1500} />
+                </AreaChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </div>
 
