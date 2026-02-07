@@ -1,5 +1,5 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Client, Product, Invoice, InvoiceItem, InvoiceStatus, Company } from '../types';
 
 interface InvoiceFormProps {
@@ -32,14 +32,34 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ clients, products, company, i
   const getNextInvoiceNumber = () => {
     const prefix = company.invoice_prefix || 'FAC-';
     const startNum = company.invoice_start_number || 1;
+    
+    // تصفية الفواتير التي تبدأ بنفس البادئة لاستخراج أعلى رقم
     const relevantInvoices = invoices.filter(inv => inv.number.startsWith(prefix));
-    if (relevantInvoices.length === 0) return `${prefix}${startNum.toString().padStart(4, '0')}`;
-    const numbers = relevantInvoices.map(inv => parseInt(inv.number.substring(prefix.length), 10) || 0);
-    const maxNum = Math.max(...numbers, startNum - 1);
+    
+    if (relevantInvoices.length === 0) {
+      return `${prefix}${startNum.toString().padStart(4, '0')}`;
+    }
+
+    const numbers = relevantInvoices
+      .map(inv => {
+        const numPart = inv.number.substring(prefix.length);
+        return parseInt(numPart, 10);
+      })
+      .filter(n => !isNaN(n));
+
+    const maxNum = numbers.length > 0 ? Math.max(...numbers, startNum - 1) : startNum - 1;
     return `${prefix}${(maxNum + 1).toString().padStart(4, '0')}`;
   };
 
-  const [invoiceNumber] = useState(initialInvoice?.number || getNextInvoiceNumber());
+  // تحويل رقم الفاتورة إلى State للسماح بالتعديل في حالة وجود Conflict
+  const [invoiceNumber, setInvoiceNumber] = useState(initialInvoice?.number || getNextInvoiceNumber());
+
+  // تحديث الرقم التلقائي إذا تغيرت قائمة الفواتير (مثلاً بعد مزامنة ناجحة)
+  useEffect(() => {
+    if (!initialInvoice && invoices.length > 0) {
+      setInvoiceNumber(getNextInvoiceNumber());
+    }
+  }, [invoices.length]);
 
   const subtotal = items.reduce((acc, item) => acc + ((item.price || 0) * (item.quantity || 0) * (1 - (item.discount || 0) / 100)), 0);
   const tvaTotal = taxEnabled 
@@ -70,13 +90,25 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ clients, products, company, i
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!clientId) return alert('Sélectionnez un client.');
+    if (!invoiceNumber) return alert('Le numéro de facture est requis.');
+
     const invoice: Invoice = {
       ...initialInvoice,
       id: initialInvoice?.id || crypto.randomUUID(),
-      number: invoiceNumber, date: invoiceDate, dueDate: dueDate || invoiceDate,
-      poNumber, clientId, items: items as InvoiceItem[],
+      number: invoiceNumber, 
+      date: invoiceDate, 
+      dueDate: dueDate || invoiceDate,
+      poNumber, 
+      clientId, 
+      items: items as InvoiceItem[],
       status: initialInvoice?.status || InvoiceStatus.DRAFT,
-      notes, subtotal, tvaTotal, taxEnabled, discountAmount, adjustmentAmount, grandTotal,
+      notes, 
+      subtotal, 
+      tvaTotal, 
+      taxEnabled, 
+      discountAmount, 
+      adjustmentAmount, 
+      grandTotal,
       payments: initialInvoice?.payments || []
     };
     onSubmit(invoice);
@@ -86,24 +118,39 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ clients, products, company, i
     <form onSubmit={handleSubmit} className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-300">
       <div className="bg-white dark:bg-[#27354c] p-8 rounded-[12px] shadow-sm border border-slate-200 dark:border-white/5">
         <h2 className="text-xl font-bold text-slate-800 dark:text-white uppercase tracking-tight mb-8">Détails de la Facture</h2>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
-          <div className="relative" ref={dropdownRef}>
+        
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-12">
+          <div className="md:col-span-1">
+            <label className="text-[10px] font-bold text-slate-400 uppercase mb-2 block">N° Facture</label>
+            <input 
+              type="text" 
+              value={invoiceNumber} 
+              onChange={(e) => setInvoiceNumber(e.target.value)} 
+              className="w-full bg-slate-50 dark:bg-slate-900/40 border border-indigo-200 dark:border-indigo-500/30 rounded-[8px] px-4 py-3 text-xs font-black text-indigo-600 dark:text-indigo-400 outline-none focus:ring-2 focus:ring-indigo-500/20" 
+              placeholder="Ex: FAC-0001"
+            />
+          </div>
+          
+          <div className="relative md:col-span-1" ref={dropdownRef}>
             <label className="text-[10px] font-bold text-slate-400 uppercase mb-2 block">Client</label>
-            <div onClick={() => setIsDropdownOpen(!isDropdownOpen)} className="w-full bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-white/5 rounded-[8px] px-4 py-3 cursor-pointer text-xs font-bold dark:text-white">
-              {selectedClient ? selectedClient.name : 'Chercher un client...'}
+            <div onClick={() => setIsDropdownOpen(!isDropdownOpen)} className="w-full bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-white/5 rounded-[8px] px-4 py-3 cursor-pointer text-xs font-bold dark:text-white truncate">
+              {selectedClient ? selectedClient.name : 'Chercher...'}
             </div>
             {isDropdownOpen && (
-              <div className="absolute z-50 mt-2 w-full bg-white dark:bg-slate-800 rounded-[12px] shadow-2xl border border-slate-100 dark:border-white/10 overflow-hidden">
+              <div className="absolute z-50 mt-2 w-64 bg-white dark:bg-slate-800 rounded-[12px] shadow-2xl border border-slate-100 dark:border-white/10 overflow-hidden">
                 <div className="p-3 bg-slate-50 dark:bg-slate-900/50"><input type="text" value={clientSearch} onChange={(e) => setClientSearch(e.target.value)} className="w-full px-3 py-2 border rounded-[8px] text-xs outline-none dark:bg-slate-800 dark:text-white dark:border-white/5" /></div>
-                {clients.filter(c => c.name.toLowerCase().includes(clientSearch.toLowerCase())).map(c => (
-                  <div key={c.id} onClick={() => { setClientId(c.id); setIsDropdownOpen(false); }} className="px-4 py-3 text-xs hover:bg-indigo-50 dark:hover:bg-indigo-500/10 cursor-pointer dark:text-slate-200">{c.name}</div>
-                ))}
+                <div className="max-h-60 overflow-y-auto">
+                  {clients.filter(c => c.name.toLowerCase().includes(clientSearch.toLowerCase())).map(c => (
+                    <div key={c.id} onClick={() => { setClientId(c.id); setIsDropdownOpen(false); }} className="px-4 py-3 text-xs hover:bg-indigo-50 dark:hover:bg-indigo-500/10 cursor-pointer dark:text-slate-200">{c.name}</div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
+
           <div><label className="text-[10px] font-bold text-slate-400 uppercase mb-2 block">Date</label><input type="date" value={invoiceDate} onChange={(e) => setInvoiceDate(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-white/5 rounded-[8px] px-4 py-3 text-xs font-bold dark:text-white" /></div>
           <div><label className="text-[10px] font-bold text-slate-400 uppercase mb-2 block">Échéance</label><input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-white/5 rounded-[8px] px-4 py-3 text-xs font-bold dark:text-white" /></div>
-          <div><label className="text-[10px] font-bold text-slate-400 uppercase mb-2 block">Bon de Commande</label><input type="text" value={poNumber} onChange={(e) => setPoNumber(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-white/5 rounded-[8px] px-4 py-3 text-xs font-bold dark:text-white" /></div>
+          <div><label className="text-[10px] font-bold text-slate-400 uppercase mb-2 block">BC</label><input type="text" value={poNumber} onChange={(e) => setPoNumber(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-white/5 rounded-[8px] px-4 py-3 text-xs font-bold dark:text-white" placeholder="N° Commande" /></div>
         </div>
 
         <div className="space-y-4 mb-12">
