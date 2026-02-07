@@ -1,90 +1,21 @@
-@import "tailwindcss";
 
+/* Reset and Base Styles */
 :root {
-  --font-main: 'Inter', sans-serif;
-  --font-size-base: 13px;
-  --line-height-base: 21px;
+  --brand-primary: #4f46e5;
+  --font-inter: 'Inter', sans-serif;
 }
 
 body {
-  font-family: var(--font-main);
-  font-weight: 400;
-  font-size: var(--font-size-base);
-  line-height: var(--line-height-base);
+  font-family: var(--font-inter);
+  font-size: 13px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-* {
-  font-family: var(--font-main);
-  font-weight: 400;
-}
-
-p,
-span,
-div,
-td,
-th,
-input,
-select,
-textarea,
-button,
-li,
-a {
-  font-size: var(--font-size-base);
-  line-height: var(--line-height-base);
-}
-
-b,
-strong,
-h1,
-h2,
-h3,
-h4,
-.font-bold,
-.font-semibold {
-  font-weight: 600;
-}
-
-.font-black {
-  font-weight: 600;
-}
-
-/* Typography Overrides */
-.text-xs {
-  font-size: 11px !important;
-  line-height: 16px !important;
-}
-
-.text-sm {
-  font-size: 13px !important;
-  line-height: 21px !important;
-}
-
-.text-base {
-  font-size: 14px !important;
-  line-height: 21px !important;
-}
-
-.text-lg {
-  font-size: 16px !important;
-  line-height: 24px !important;
-}
-
-.text-xl {
-  font-size: 18px !important;
-  line-height: 26px !important;
-}
-
-.text-2xl {
-  font-size: 22px !important;
-  line-height: 30px !important;
-}
-
-/* Custom Scrollbar */
+/* Custom Scrollbars */
 .custom-scrollbar::-webkit-scrollbar {
   width: 5px;
+  height: 5px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
@@ -100,41 +31,63 @@ h4,
   background: #94a3b8;
 }
 
-/* Theme Transitions */
-.transition-theme {
-  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease, fill 0.3s ease;
+/* Animations Globales */
+.animate-in {
+  animation-duration: 0.5s;
+  animation-fill-mode: both;
 }
 
-/* Dark Mode Overrides */
+.fade-in {
+  animation-name: fadeIn;
+}
+
+.slide-in-from-bottom-4 {
+  animation-name: slideInBottom;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideInBottom {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* Utility Classes enhancement */
+.shadow-xl {
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
+}
+
+/* Dark Mode Overrides for deeper blacks */
 .dark body {
   background-color: #0f172a;
-  color: #f8fafc;
 }
 
 .dark .bg-white {
   background-color: #1e293b !important;
 }
 
-.dark .bg-slate-50 {
-  background-color: #0f172a !important;
-}
-
-.dark .text-slate-800 {
-  color: #f1f5f9 !important;
-}
-
-.dark .text-slate-900 {
-  color: #f8fafc !important;
-}
-
-.dark .border-slate-200 {
+.dark .border-slate-200, .dark .border-slate-100 {
   border-color: #334155 !important;
 }
 
-.dark .bg-slate-100 {
-  background-color: #334155 !important;
+.dark .text-slate-800 { color: #f1f5f9 !important; }
+.dark .text-slate-900 { color: #ffffff !important; }
+.dark .text-slate-400 { color: #64748b !important; }
+
+/* Table Hover Effects */
+tr.hover\:bg-slate-50\/30:hover {
+  background-color: rgba(248, 250, 252, 0.5);
 }
 
-.dark .hover:bg-slate-100:hover {
-  background-color: #334155 !important;
+.dark tr.hover\:bg-slate-50\/30:hover {
+  background-color: rgba(30, 41, 59, 0.5);
+}
+
+/* Printable improvements */
+@media print {
+  .no-print { display: none !important; }
+  body { background: white !important; }
 }
