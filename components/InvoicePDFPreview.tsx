@@ -81,7 +81,7 @@ const InvoicePDFPreview: React.FC<InvoicePDFPreviewProps> = ({ invoices, company
   };
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md print:bg-white print:p-0 overflow-hidden print:overflow-visible font-sans text-slate-900">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md overflow-hidden print:overflow-visible font-sans text-slate-900 invoice-modal-container">
       <div className="bg-white w-full max-w-6xl h-[95vh] rounded-[15px] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 print:h-auto print:w-full print:shadow-none print:rounded-none print:static print:block relative">
 
         {/* Barre d'outils */}
@@ -139,7 +139,7 @@ const InvoicePDFPreview: React.FC<InvoicePDFPreviewProps> = ({ invoices, company
 
                   <div className="relative z-10 flex flex-col h-full">
 
-                    {/* Header: Logo (Even Bigger) & Client Box */}
+                    {/* Header: Logo & Client Box */}
                     <div className="flex justify-between items-start mb-6">
                       <div className="w-[220px]">
                         {company.logo ? (
@@ -168,7 +168,7 @@ const InvoicePDFPreview: React.FC<InvoicePDFPreviewProps> = ({ invoices, company
                       </div>
                     </div>
 
-                    {/* Tableau des produits - Font size 13px */}
+                    {/* Tableau des produits */}
                     <div className="mb-6">
                       <table className="w-full border-collapse">
                         <thead>
@@ -192,7 +192,7 @@ const InvoicePDFPreview: React.FC<InvoicePDFPreviewProps> = ({ invoices, company
                       </table>
                     </div>
 
-                    {/* Section Pied de Document (Notes & Totaux) */}
+                    {/* Section Totaux */}
                     <div className="flex justify-between items-start pt-4 border-t-2 border-slate-100">
                       <div className="space-y-4 max-w-sm">
                         <div className="flex gap-6">
@@ -210,7 +210,6 @@ const InvoicePDFPreview: React.FC<InvoicePDFPreviewProps> = ({ invoices, company
                           <p className="text-[11px] text-slate-600 font-medium italic leading-relaxed">{invoice.notes || "Sans remarques particulières."}</p>
                         </div>
 
-                        {/* Cacheط & Signature (Size Significantly Increased) */}
                         <div className="mt-4">
                           {company.signature ? (
                             <img src={company.signature} className="h-48 object-contain ml-4 mix-blend-multiply opacity-95" alt="Signature" />
@@ -246,10 +245,9 @@ const InvoicePDFPreview: React.FC<InvoicePDFPreviewProps> = ({ invoices, company
                       </div>
                     </div>
 
-                    {/* Spacer flexible pour pousser le فوتر للأسفل */}
                     <div className="flex-1"></div>
 
-                    {/* Footer - Only generic footer text remains */}
+                    {/* Footer */}
                     <div className="mt-auto pt-4 border-t-2 border-slate-200 text-center space-y-2 bg-white pb-4">
                       <div className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em]">
                         {company.footer || "Propulsé par FacturaPro - www.facturapro.ma"}
@@ -267,30 +265,78 @@ const InvoicePDFPreview: React.FC<InvoicePDFPreviewProps> = ({ invoices, company
       <style dangerouslySetInnerHTML={{
         __html: `
         @media print {
-          @page { size: A4; margin: 0; }
-          body { margin: 0 !important; padding: 0 !important; background: white !important; }
-          body * { visibility: hidden !important; }
-          .printable-container, .printable-container * { visibility: visible !important; }
-          .printable-container {
-            position: absolute !important;
-            left: 0 !important;
-            top: 0 !important;
-            width: 100% !important;
+          @page { 
+            size: A4 portrait; 
+            margin: 0; 
+          }
+          
+          /* Force colors and backgrounds */
+          * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            color-adjust: exact !important;
+          }
+
+          /* Reset body and hide main UI */
+          html, body {
             margin: 0 !important;
             padding: 0 !important;
+            height: auto !important;
+            overflow: visible !important;
             background: white !important;
           }
+
+          /* Hide everything except the printable container and its parents */
+          body > #root > div:not(.invoice-modal-container) {
+            display: none !important;
+          }
+          
+          /* If nested, we need to make sure parents are visible but siblings are hidden */
+          /* We'll use a safer approach: Hide all children of body, then show the root and the specific modal */
+          body > *:not(#root) { display: none !important; }
+          #root > *:not(.invoice-modal-container) { display: none !important; }
+
+          .invoice-modal-container {
+            position: static !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            background: white !important;
+            display: block !important;
+            overflow: visible !important;
+            width: 100% !important;
+          }
+
+          /* Hide modal toolbar and backdrop effects */
+          .print\\:hidden, .backdrop-blur-md, .bg-slate-900\\/80 {
+            display: none !important;
+            background: none !important;
+            backdrop-filter: none !important;
+          }
+
+          .printable-container {
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 210mm !important;
+            display: block !important;
+          }
+
           .printable-sheet {
-            page-break-after: always !important;
+            margin: 0 !important;
             box-shadow: none !important;
             border: none !important;
             width: 210mm !important;
             height: 297mm !important;
-            min-height: 297mm !important;
-            -webkit-print-color-adjust: exact;
+            page-break-after: always !important;
             display: flex !important;
             flex-direction: column !important;
-            overflow: hidden !important;
+            background: white !important;
+            position: relative !important;
+          }
+
+          /* Ensure images and logos are visible */
+          img {
+            max-width: 100% !important;
+            display: block !important;
           }
         }
       `}} />

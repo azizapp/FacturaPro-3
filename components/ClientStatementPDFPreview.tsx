@@ -27,7 +27,7 @@ const ClientStatementPDFPreview: React.FC<ClientStatementPDFPreviewProps> = ({ c
   const balance = totalInvoiced - totalCollected;
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md print:bg-white print:p-0 overflow-hidden print:overflow-visible">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md overflow-hidden print:overflow-visible statement-modal-container">
       <div className="bg-white w-full max-w-5xl h-[95vh] rounded-[15px] shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-8 duration-300 print:h-auto print:w-full print:shadow-none print:rounded-none print:static print:block">
         
         {/* Header - Hidden on Print */}
@@ -101,7 +101,7 @@ const ClientStatementPDFPreview: React.FC<ClientStatementPDFPreviewProps> = ({ c
             {/* Invoices History */}
             <div className="mb-12">
               <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-indigo-600 border-b-2 border-indigo-50 pb-3 mb-6 flex items-center">
-                <i className="fas fa-file-invoice mr-3"></i> Historique des Facturations (Ventes)
+                <i className="fas fa-file-invoice mr-3"></i> Historique des Facturations
               </h4>
               <table className="w-full text-left mb-8 border-collapse">
                 <thead>
@@ -136,7 +136,7 @@ const ClientStatementPDFPreview: React.FC<ClientStatementPDFPreviewProps> = ({ c
             {/* Payments History */}
             <div className="mb-16">
               <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-emerald-600 border-b-2 border-emerald-50 pb-3 mb-6 flex items-center">
-                <i className="fas fa-receipt mr-3"></i> Historique des Règlements (Encaissements)
+                <i className="fas fa-receipt mr-3"></i> Historique des Règlements
               </h4>
               <table className="w-full text-left border-collapse">
                 <thead>
@@ -156,24 +156,18 @@ const ClientStatementPDFPreview: React.FC<ClientStatementPDFPreviewProps> = ({ c
                       <td className="py-4 px-4 text-right font-black text-emerald-600">+{p.amount.toLocaleString()}</td>
                     </tr>
                   ))}
-                  {payments.length === 0 && (
-                    <tr>
-                      <td colSpan={4} className="py-12 text-center text-slate-400 italic">Aucun mouvement de règlement enregistré sur la période.</td>
-                    </tr>
-                  )}
                 </tbody>
               </table>
             </div>
 
-            {/* Relevé Totals Summary */}
             <div className="flex justify-end pt-12 border-t-4 border-slate-900">
               <div className="w-80 space-y-4">
                 <div className="flex justify-between text-[11px] font-black text-slate-400 uppercase tracking-widest">
-                  <span>Volume Total (Pièces)</span>
+                  <span>Volume Total</span>
                   <span className="text-slate-800">{totalPieces} UNITÉS</span>
                 </div>
                 <div className="flex justify-between text-[11px] font-black text-slate-400 uppercase tracking-widest">
-                  <span>Cumul Facturé TTC</span>
+                  <span>Cumul Facturé</span>
                   <span className="text-slate-800">{totalInvoiced.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between text-[11px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-4">
@@ -188,7 +182,7 @@ const ClientStatementPDFPreview: React.FC<ClientStatementPDFPreviewProps> = ({ c
             </div>
 
             <div className="mt-24 pt-12 border-t border-slate-100 text-[10px] text-slate-300 uppercase tracking-[0.4em] text-center leading-loose font-medium">
-              {company.footer || `Ce relevé est certifié conforme par FacturaPro - ${new Date().toLocaleDateString('fr-FR')} <br />Merci de nous signaler tout écart sous 48h.`}
+              {company.footer || "Ce relevé est certifié conforme par FacturaPro."}
             </div>
           </div>
         </div>
@@ -196,45 +190,59 @@ const ClientStatementPDFPreview: React.FC<ClientStatementPDFPreviewProps> = ({ c
       
       <style dangerouslySetInnerHTML={{ __html: `
         @media print {
-          @page { size: A4; margin: 0; }
-          body { margin: 0 !important; padding: 0 !important; background: white !important; }
-          body * { visibility: hidden !important; }
-          .printable-sheet, .printable-sheet * { visibility: visible !important; }
-          .printable-sheet {
-            position: absolute !important;
+          @page { size: A4 portrait; margin: 0; }
+          * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+          
+          html, body {
+            margin: 0 !important;
+            padding: 0 !important;
+            background: white !important;
+            overflow: visible !important;
+            height: auto !important;
+          }
+
+          body > #root > div:not(.statement-modal-container) {
+            display: none !important;
+          }
+
+          .statement-modal-container {
+            position: static !important;
             left: 0 !important;
             top: 0 !important;
             width: 100% !important;
+            padding: 0 !important;
             margin: 0 !important;
-            padding: 10mm !important;
-            display: block !important;
             background: white !important;
+            display: block !important;
+            overflow: visible !important;
+            z-index: 9999 !important;
+          }
+
+          .print\\:hidden, .bg-slate-900\\/60, .backdrop-blur-md {
+            display: none !important;
+          }
+
+          .printable-sheet {
             box-shadow: none !important;
             border: none !important;
-            -webkit-print-color-adjust: exact;
-          }
-          /* Ink saving optimizations */
-          .printable-sheet, .printable-sheet * {
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 15mm !important;
             background: white !important;
-            color: black !important;
-            border-color: #ccc !important;
+            border-radius: 0 !important;
           }
-          .bg-slate-900, .bg-slate-50, .bg-indigo-600, .bg-indigo-50, .bg-emerald-500, .bg-rose-600, .bg-rose-50\/30, .bg-white\/10, .bg-slate-100, .bg-slate-200, .bg-emerald-600, .bg-orange-600, .bg-orange-500, .bg-emerald-500\/20 {
-            background: white !important;
-            color: black !important;
+
+          .bg-slate-50 {
+            background-color: #f8fafc !important;
+            border-color: #e2e8f0 !important;
           }
-          .text-white, .text-indigo-600, .text-emerald-600, .text-rose-500, .text-rose-600 {
-            color: black !important;
+          
+          .bg-slate-900 {
+            background-color: #0f172a !important;
           }
-          .border, .border-slate-100, .border-slate-200, .border-b, .border-t, .border-slate-50 {
-            border-color: #ccc !important;
-          }
-          .shadow-2xl, .shadow-sm, .shadow-lg, .shadow-xl {
-            box-shadow: none !important;
-          }
-          .bg-gradient-to-r, .from-indigo-500, .to-purple-600 {
-            background: white !important;
-          }
+
+          .text-white { color: white !important; }
+          .text-slate-900 { color: #0f172a !important; }
         }
       `}} />
     </div>
