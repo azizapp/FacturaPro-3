@@ -28,7 +28,7 @@ const ClientStatementPDFPreview: React.FC<ClientStatementPDFPreviewProps> = ({ c
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md print:bg-white print:p-0 overflow-hidden print:overflow-visible">
-      <div className="bg-white w-full max-w-5xl h-[95vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-8 duration-300 print:h-auto print:w-full print:shadow-none print:rounded-none print:static print:block">
+      <div className="bg-white w-full max-w-5xl h-[95vh] rounded-[15px] shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-8 duration-300 print:h-auto print:w-full print:shadow-none print:rounded-none print:static print:block">
         
         {/* Header - Hidden on Print */}
         <div className="p-5 bg-slate-900 flex items-center justify-between text-white shrink-0 print:hidden">
@@ -58,7 +58,7 @@ const ClientStatementPDFPreview: React.FC<ClientStatementPDFPreviewProps> = ({ c
         {/* Scrollable Preview Area */}
         <div className="flex-1 overflow-y-auto p-12 bg-slate-100 custom-scrollbar print:p-0 print:bg-white print:overflow-visible">
           {/* THE PRINTABLE SHEET */}
-          <div className="printable-sheet mx-auto bg-white p-[15mm] shadow-2xl border border-slate-200 print:border-none print:shadow-none print:p-8 print:m-0 w-full max-w-[900px] font-sans text-slate-900 print:max-w-none">
+          <div className="printable-sheet mx-auto bg-white p-[15mm] shadow-2xl border border-slate-200 print:border-none print:shadow-none print:p-8 print:m-0 w-full max-w-[900px] font-sans text-slate-900 print:max-w-none rounded-[15px]">
             
             {/* Header */}
             <div className="flex justify-between items-start mb-16">

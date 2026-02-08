@@ -57,7 +57,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-blue-600/10 blur-[120px] rounded-full"></div>
 
             <div className="w-full max-w-[460px] relative z-10">
-                <div className="bg-slate-900/60 backdrop-blur-3xl p-10 rounded-[40px] shadow-2xl border border-white/10">
+                <div className="bg-slate-900/60 backdrop-blur-3xl p-10 rounded-[15px] shadow-2xl border border-white/10">
                     <div className="flex flex-col items-center mb-10">
                         <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-indigo-700 rounded-2xl flex items-center justify-center text-white mb-6 shadow-xl shadow-indigo-500/20">
                             <i className="fas fa-shield-alt text-2xl"></i>

@@ -34,7 +34,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ invoice, onClose, onPayment
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-sm">
-      <div className="bg-white w-full max-w-lg rounded-[12px] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+      <div className="bg-white w-full max-w-lg rounded-[15px] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
         <div className="p-6 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
           <h4 className="text-lg font-bold text-slate-800 uppercase tracking-tight">Encaissement Rapide</h4>
           <button onClick={onClose} className="w-8 h-8 rounded-full hover:bg-slate-200 text-slate-400"><i className="fas fa-times"></i></button>

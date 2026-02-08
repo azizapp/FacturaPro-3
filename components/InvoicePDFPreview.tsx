@@ -78,7 +78,7 @@ const InvoicePDFPreview: React.FC<InvoicePDFPreviewProps> = ({ invoices, company
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md print:bg-white print:p-0 overflow-hidden print:overflow-visible font-sans text-slate-900">
-      <div className="bg-white w-full max-w-6xl h-[95vh] rounded-[16px] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 print:h-auto print:w-full print:shadow-none print:rounded-none print:static print:block relative">
+      <div className="bg-white w-full max-w-6xl h-[95vh] rounded-[15px] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 print:h-auto print:w-full print:shadow-none print:rounded-none print:static print:block relative">
         
         {/* Barre d'outils */}
         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-white shrink-0 print:hidden relative z-20">
@@ -202,7 +202,7 @@ const InvoicePDFPreview: React.FC<InvoicePDFPreviewProps> = ({ invoices, company
                           <p className="text-[11px] text-slate-600 font-medium italic leading-relaxed">{invoice.notes || "Sans remarques particulières."}</p>
                         </div>
                         
-                        {/* Cachet & Signature (Size Significantly Increased) */}
+                        {/* Cacheط & Signature (Size Significantly Increased) */}
                         <div className="mt-4">
                           {company.signature ? (
                             <img src={company.signature} className="h-48 object-contain ml-4 mix-blend-multiply opacity-95" alt="Signature" />

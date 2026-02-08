@@ -24,7 +24,7 @@ const ProductList: React.FC<ProductListProps> = ({ products, onAddProduct }) => 
         </button>
       </div>
 
-      <div className="bg-white dark:bg-[#27354c] rounded-2xl shadow-sm border border-slate-200 dark:border-white/5 overflow-hidden">
+      <div className="bg-white dark:bg-[#27354c] rounded-[15px] shadow-sm border border-slate-200 dark:border-white/5 overflow-hidden">
         <table className="w-full text-left">
           <thead className="bg-slate-50 dark:bg-slate-900/40 border-b border-slate-200 dark:border-white/5">
             <tr>

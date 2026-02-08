@@ -119,7 +119,7 @@ const InvoiceDetailView: React.FC<InvoiceDetailViewProps> = ({
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
-          <div className="bg-white rounded-[12px] p-10 shadow-sm border border-slate-200">
+          <div className="bg-white rounded-[15px] p-10 shadow-sm border border-slate-200">
             <div className="grid grid-cols-2 gap-12 mb-12">
               <div className="space-y-4">
                 <h4 className="text-[10px] font-bold uppercase tracking-widest text-slate-400">De</h4>
@@ -140,7 +140,7 @@ const InvoiceDetailView: React.FC<InvoiceDetailViewProps> = ({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mb-12 p-6 bg-slate-50 rounded-[12px] border border-slate-100">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mb-12 p-6 bg-slate-50 rounded-[15px] border border-slate-100">
                <div>
                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Date Facture</p>
                  <p className="text-sm font-black text-slate-700">{new Date(invoice.date).toLocaleDateString('fr-FR')}</p>
@@ -226,7 +226,7 @@ const InvoiceDetailView: React.FC<InvoiceDetailViewProps> = ({
             </div>
           </div>
 
-          <div className="bg-slate-900 rounded-[12px] p-10 shadow-xl">
+          <div className="bg-slate-900 rounded-[15px] p-10 shadow-xl">
              <div className="flex items-center space-x-3 mb-8">
                <div className="w-8 h-8 rounded-[8px] bg-emerald-500 flex items-center justify-center text-white">
                  <i className="fas fa-history text-xs"></i>
@@ -262,7 +262,7 @@ const InvoiceDetailView: React.FC<InvoiceDetailViewProps> = ({
         </div>
 
         <div className="space-y-8">
-          <div className="bg-white p-8 rounded-[12px] border border-slate-200 shadow-sm space-y-6">
+          <div className="bg-white p-8 rounded-[15px] border border-slate-200 shadow-sm space-y-6">
             <h4 className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Balance</h4>
             <div className="space-y-4">
                <div>
@@ -287,7 +287,7 @@ const InvoiceDetailView: React.FC<InvoiceDetailViewProps> = ({
             </div>
           </div>
 
-          <div className="bg-indigo-600 p-8 rounded-[12px] shadow-xl shadow-indigo-600/20 text-white space-y-6">
+          <div className="bg-indigo-600 p-8 rounded-[15px] shadow-xl shadow-indigo-600/20 text-white space-y-6">
             <h4 className="text-[10px] font-bold uppercase tracking-widest text-indigo-200">Actions Rapides</h4>
             <div className="space-y-3">
                <button onClick={handleWhatsApp} className="w-full bg-[#25D366] hover:bg-[#128C7E] text-white py-3 rounded-[10px] text-xs font-bold uppercase tracking-widest transition-all flex items-center justify-center space-x-2">

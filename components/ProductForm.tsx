@@ -42,7 +42,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ onSubmit, onCancel }) => {
         <div className="flex items-center space-x-4">
           <button 
             onClick={onCancel} 
-            className="w-10 h-10 flex items-center justify-center rounded-full bg-white dark:bg-[#27354c] border border-slate-200 dark:border-white/10 text-slate-400 hover:text-indigo-600 hover:border-indigo-200 transition-all shadow-sm"
+            className="w-10 h-10 flex items-center justify-center rounded-full bg-white dark:bg-[#27354c] border border-slate-200 dark:border-white/10 text-slate-400 hover:text-indigo-600 hover:border-indigo-200 shadow-sm transition-all"
           >
             <i className="fas fa-arrow-left"></i>
           </button>
@@ -55,7 +55,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ onSubmit, onCancel }) => {
 
       <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
-          <div className="bg-white dark:bg-[#27354c] p-10 rounded-3xl shadow-sm border border-slate-200 dark:border-white/5 space-y-8">
+          <div className="bg-white dark:bg-[#27354c] p-10 rounded-[15px] shadow-sm border border-slate-200 dark:border-white/5 space-y-8">
             <div className="space-y-6">
               <h4 className="text-xs font-black uppercase tracking-[0.2em] text-indigo-600 dark:text-indigo-400 border-b border-indigo-50 dark:border-white/5 pb-2">Informations Générales</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -106,7 +106,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ onSubmit, onCancel }) => {
         </div>
 
         <div className="space-y-8">
-          <div className="bg-white dark:bg-[#27354c] p-10 rounded-3xl shadow-sm border border-slate-200 dark:border-white/5 space-y-8">
+          <div className="bg-white dark:bg-[#27354c] p-10 rounded-[15px] shadow-sm border border-slate-200 dark:border-white/5 space-y-8">
             <h4 className="text-xs font-black uppercase tracking-[0.2em] text-orange-500 dark:text-orange-400 border-b border-orange-50 dark:border-white/5 pb-2">Tarification</h4>
             <div className="space-y-6">
               <div className="space-y-2">

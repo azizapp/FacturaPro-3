@@ -51,7 +51,7 @@ const PaymentPage: React.FC<PaymentPageProps> = ({ invoices, clients, onPaymentA
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
-      <div className="bg-white dark:bg-[#27354c] rounded-3xl shadow-sm border border-slate-200 dark:border-white/5 overflow-hidden">
+      <div className="bg-white dark:bg-[#27354c] rounded-[15px] shadow-sm border border-slate-200 dark:border-white/5 overflow-hidden">
         <div className="p-6 border-b border-slate-100 dark:border-white/5 bg-slate-50/30 dark:bg-slate-900/40 space-y-4">
           <h3 className="text-lg font-semibold text-slate-800 dark:text-white uppercase tracking-tight">Gestion des Encaissements</h3>
           <div className="relative max-w-xs">
@@ -107,7 +107,7 @@ const PaymentPage: React.FC<PaymentPageProps> = ({ invoices, clients, onPaymentA
 
       {isModalOpen && selectedInvoice && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-sm">
-          <div className="bg-white dark:bg-[#27354c] w-full max-w-lg rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 border border-transparent dark:border-white/10">
+          <div className="bg-white dark:bg-[#27354c] w-full max-w-lg rounded-[15px] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 border border-transparent dark:border-white/10">
             <div className="p-6 bg-slate-50 dark:bg-slate-900/40 border-b border-slate-100 dark:border-white/5 flex items-center justify-between">
                <h4 className="text-lg font-bold text-slate-800 dark:text-white uppercase tracking-tight">Nouveau Versement</h4>
                <button onClick={() => setIsModalOpen(false)} className="text-slate-300 hover:text-rose-500"><i className="fas fa-times"></i></button>

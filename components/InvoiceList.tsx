@@ -229,7 +229,7 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ invoices, clients, company, o
   );
 
   return (
-    <div className="flex h-[calc(100vh-160px)] bg-white dark:bg-[#27354c] border border-slate-200 dark:border-white/5 rounded-xl overflow-hidden shadow-sm transition-colors duration-300">
+    <div className="flex h-[calc(100vh-160px)] bg-white dark:bg-[#27354c] border border-slate-200 dark:border-white/5 rounded-[15px] overflow-hidden shadow-sm transition-colors duration-300">
       <div className="w-80 border-r border-slate-200 dark:border-white/5 flex flex-col bg-slate-50/30 dark:bg-slate-900/20">
         <div className="p-4 border-b border-slate-200 dark:border-white/5 bg-white dark:bg-slate-900/40 space-y-3">
           <div className="flex items-center justify-between">
@@ -294,7 +294,7 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ invoices, clients, company, o
               <div className="flex items-start justify-between mb-6">
                 <div>
                   <h2 className="text-2xl font-black text-slate-800 dark:text-white uppercase tracking-tight">{selectedClient.name}</h2>
-                  <p className="text-xs text-slate-400 dark:text-slate-500 font-medium italic mt-1">{selectedClient.address} • {selectedClient.city}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-500 font-medium italic mt-1">{selectedClient.address} • {selectedClient.city}</p>
                 </div>
                 <div className="flex space-x-2">
                   <button
@@ -326,19 +326,19 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ invoices, clients, company, o
               {activeTab === "Vue d'ensemble" && (
                 <div className="max-w-5xl mx-auto space-y-6 animate-in fade-in duration-300">
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                    <div className="bg-white dark:bg-white/5 p-6 rounded-3xl border border-slate-200 dark:border-white/5 shadow-sm">
+                    <div className="bg-white dark:bg-white/5 p-6 rounded-[15px] border border-slate-200 dark:border-white/5 shadow-sm">
                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Total Pièces</p>
                       <p className="text-xl font-black text-slate-800 dark:text-white">{totalPieces}</p>
                     </div>
-                    <div className="bg-white dark:bg-white/5 p-6 rounded-3xl border border-slate-200 dark:border-white/5 shadow-sm">
+                    <div className="bg-white dark:bg-white/5 p-6 rounded-[15px] border border-slate-200 dark:border-white/5 shadow-sm">
                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Total Facturé</p>
                       <p className="text-xl font-black text-slate-800 dark:text-white">{totalInvoiced.toLocaleString()}</p>
                     </div>
-                    <div className="bg-white dark:bg-white/5 p-6 rounded-3xl border border-slate-200 dark:border-white/5 shadow-sm">
+                    <div className="bg-white dark:bg-white/5 p-6 rounded-[15px] border border-slate-200 dark:border-white/5 shadow-sm">
                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Total Recouvré</p>
                       <p className="text-xl font-black text-emerald-500">{totalCollected.toLocaleString()}</p>
                     </div>
-                    <div className="bg-white dark:bg-white/5 p-6 rounded-3xl border border-rose-100 dark:border-rose-500/20 shadow-sm ring-1 ring-rose-50 dark:ring-rose-500/20">
+                    <div className="bg-white dark:bg-white/5 p-6 rounded-[15px] border border-rose-100 dark:border-rose-500/20 shadow-sm ring-1 ring-rose-50 dark:ring-rose-500/20">
                       <p className="text-[10px] font-bold text-rose-400 uppercase tracking-widest mb-2">Solde Restant</p>
                       <p className="text-xl font-black text-rose-500">{soldeDebiteur.toLocaleString()}</p>
                     </div>
@@ -348,7 +348,7 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ invoices, clients, company, o
 
               {(activeTab === 'Factures' || activeTab === 'Paiements') && (
                 <div className="max-w-5xl mx-auto space-y-6 animate-in slide-in-from-bottom-2 duration-300">
-                  <div className="bg-white dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/5 overflow-hidden shadow-sm">
+                  <div className="bg-white dark:bg-white/5 rounded-[15px] border border-slate-200 dark:border-white/5 overflow-hidden shadow-sm">
                     <table className="w-full text-left border-collapse">
                       <thead className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-white/5">
                         <tr>
@@ -405,7 +405,7 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ invoices, clients, company, o
 
               {activeTab === 'Relevé' && (
                 <div className="max-w-5xl mx-auto space-y-6 animate-in fade-in duration-500">
-                  <div className="bg-white dark:bg-white/5 shadow-xl border border-slate-200 dark:border-white/10 p-12 font-sans text-slate-900 dark:text-white mx-auto w-full max-w-4xl min-h-[600px]">
+                  <div className="bg-white dark:bg-white/5 shadow-xl border border-slate-200 dark:border-white/10 p-12 font-sans text-slate-900 dark:text-white mx-auto w-full max-w-4xl min-h-[600px] rounded-[15px]">
                     <div className="flex justify-between items-start mb-12 pb-8 border-b border-slate-100 dark:border-white/5">
                       <div>
                         <div className="mb-4">

@@ -116,7 +116,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ initialClient, onSubmit, onCanc
 
       <form onSubmit={handleSubmit} className="space-y-8 pb-20">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div className="bg-white dark:bg-[#27354c] p-8 rounded-3xl shadow-sm border border-slate-200 dark:border-white/5 space-y-6">
+          <div className="bg-white dark:bg-[#27354c] p-8 rounded-[15px] shadow-sm border border-slate-200 dark:border-white/5 space-y-6">
             <h4 className="text-xs font-black uppercase text-indigo-600 dark:text-indigo-400 border-b border-indigo-50 dark:border-white/5 pb-2 flex items-center">
               <i className="fas fa-id-card mr-2"></i> Identité & Responsables
             </h4>
@@ -168,7 +168,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ initialClient, onSubmit, onCanc
             </div>
           </div>
 
-          <div className="bg-white dark:bg-[#27354c] p-8 rounded-3xl shadow-sm border border-slate-200 dark:border-white/5 space-y-6">
+          <div className="bg-white dark:bg-[#27354c] p-8 rounded-[15px] shadow-sm border border-slate-200 dark:border-white/5 space-y-6">
             <h4 className="text-xs font-black uppercase text-emerald-600 dark:text-emerald-400 border-b border-emerald-50 dark:border-white/5 pb-2 flex items-center">
               <i className="fas fa-phone-alt mr-2"></i> Coordonnées de Contact
             </h4>
@@ -208,7 +208,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ initialClient, onSubmit, onCanc
             </div>
           </div>
 
-          <div className="bg-white dark:bg-[#27354c] p-8 rounded-3xl shadow-sm border border-slate-200 dark:border-white/5 space-y-6 lg:col-span-2">
+          <div className="bg-white dark:bg-[#27354c] p-8 rounded-[15px] shadow-sm border border-slate-200 dark:border-white/5 space-y-6 lg:col-span-2">
             <h4 className="text-xs font-black uppercase text-orange-500 dark:text-orange-400 border-b border-orange-50 dark:border-white/5 pb-2 flex items-center">
               <i className="fas fa-map-marked-alt mr-2"></i> Localisation Géographique
             </h4>

@@ -210,7 +210,7 @@ const App: React.FC = () => {
 };
 
 const NavItem: React.FC<{ icon: string, label: string, active: boolean, onClick: () => void, collapsed: boolean }> = ({ icon, label, active, onClick, collapsed }) => (
-  <button onClick={onClick} className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${active ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
+  <button onClick={onClick} className={`w-full flex items-center space-x-3 px-4 py-3 rounded-[15px] text-sm font-medium transition-all ${active ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
     <i className={`fas ${icon} w-5`}></i>
     {!collapsed && <span>{label}</span>}
   </button>

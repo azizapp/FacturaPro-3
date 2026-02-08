@@ -211,7 +211,7 @@ const InvoiceTable: React.FC<InvoiceTableProps> = ({
   };
 
   return (
-    <div className="bg-white dark:bg-[#27354c] rounded-2xl shadow-xl overflow-hidden border border-slate-100 dark:border-white/5 transition-colors duration-300 flex flex-col h-full">
+    <div className="bg-white dark:bg-[#27354c] rounded-[15px] shadow-xl overflow-hidden border border-slate-100 dark:border-white/5 transition-colors duration-300 flex flex-col h-full">
       {/* Filter Header */}
       <div className="border-b border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-slate-900/20">
         <div className="flex items-center justify-between p-4">

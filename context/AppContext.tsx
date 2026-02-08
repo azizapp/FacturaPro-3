@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Invoice, Client, Product, Company, Payment, InvoiceStatus, User } from '../types';
 import { db } from '../services/supabaseService';
@@ -42,12 +43,50 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const [theme, setTheme] = useState<'light' | 'dark'>('light');
     const [user, setUser] = useState<User | null>(null);
 
+    // Initialisation immédiate au montage
     useEffect(() => {
-        const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
-        if (savedTheme) {
-            setTheme(savedTheme);
-            document.documentElement.classList.toggle('dark', savedTheme === 'dark');
-        }
+        const init = async () => {
+            // Charger le thème
+            const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
+            if (savedTheme) {
+                setTheme(savedTheme);
+                document.documentElement.classList.toggle('dark', savedTheme === 'dark');
+            }
+
+            // Charger les données du cache immédiatement pour un affichage instantané
+            const cachedData = dataSyncService.getCachedData();
+            if (cachedData.invoices.length > 0 || cachedData.clients.length > 0 || cachedData.products.length > 0) {
+                setInvoices(cachedData.invoices);
+                setClients(cachedData.clients);
+                setProducts(cachedData.products);
+                if (cachedData.company) setCompany(cachedData.company);
+                // Si on a des données, on peut déjà arrêter l'affichage du spinner principal
+                setIsLoading(false);
+            }
+
+            // Vérifier la session Supabase existante
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session?.user) {
+                setUser({ id: session.user.id, email: session.user.email! });
+                await refreshUserData(); // Sync fraîche avec le serveur
+            } else {
+                setIsLoading(false);
+            }
+        };
+
+        init();
+
+        // Écouter les changements d'état d'authentification
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            if (session?.user) {
+                setUser({ id: session.user.id, email: session.user.email! });
+                refreshUserData();
+            } else {
+                setUser(null);
+            }
+        });
+
+        return () => subscription.unsubscribe();
     }, []);
 
     const toggleTheme = () => {
@@ -58,47 +97,33 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     };
 
     const refreshUserData = async () => {
-        setIsLoading(true);
+        // On n'affiche le loader que si on n'a absolument rien à afficher
+        if (invoices.length === 0 && clients.length === 0) {
+            setIsLoading(true);
+        }
+        
         try {
-            const cachedData = await dataSyncService.initializeWithCache();
-            setInvoices(cachedData.invoices);
-            setClients(cachedData.clients);
-            setProducts(cachedData.products);
-            if (cachedData.company) setCompany(cachedData.company);
-            else setCompany({
-                id: '1', name: 'Ma Société', address: '123 Rue de la Paix',
-                email: 'contact@example.com', phone: '0123456789', siret: '12345678901234',
-                city: 'Paris', country: 'France'
-            });
+            // Synchronisation en arrière-plan via le service de sync
+            const freshData = await dataSyncService.initializeWithCache();
+            setInvoices(freshData.invoices);
+            setClients(freshData.clients);
+            setProducts(freshData.products);
+            
+            if (freshData.company) {
+                setCompany(freshData.company);
+            } else if (!company) {
+                setCompany({
+                    id: '1', name: 'Ma Société', address: '123 Rue de la Paix',
+                    email: 'contact@example.com', phone: '0123456789', siret: '12345678901234',
+                    city: 'Paris', country: 'France'
+                });
+            }
         } catch (error) {
-            console.error("Error initializing app:", error);
+            console.error("Erreur lors du rafraîchissement des données:", error);
         } finally {
             setIsLoading(false);
         }
     };
-
-    useEffect(() => {
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            if (session?.user) {
-                setUser({ id: session.user.id, email: session.user.email! });
-                refreshUserData();
-            } else {
-                setUser(null);
-                setIsLoading(false);
-            }
-        });
-
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            if (session?.user) {
-                setUser({ id: session.user.id, email: session.user.email! });
-                refreshUserData();
-            } else {
-                setIsLoading(false);
-            }
-        });
-
-        return () => subscription.unsubscribe();
-    }, []);
 
     const logout = async () => {
         await supabase.auth.signOut();
@@ -107,48 +132,48 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     const addInvoice = (invoice: Invoice) => {
         setInvoices(prev => [invoice, ...prev]);
-        db.addInvoice(invoice).catch(e => console.error("Sync Error:", e));
+        db.addInvoice(invoice).catch(e => console.error("Erreur de synchro facture:", e));
         dataSyncService.addInvoice(invoice);
     };
 
     const updateInvoice = (invoice: Invoice) => {
         setInvoices(prev => prev.map(inv => inv.id === invoice.id ? invoice : inv));
-        db.updateInvoice(invoice).catch(e => console.error("Sync Error:", e));
+        db.updateInvoice(invoice).catch(e => console.error("Erreur de mise à jour facture:", e));
         dataSyncService.updateInvoices([...invoices.filter(i => i.id !== invoice.id), invoice]);
     };
 
     const deleteInvoice = (id: string) => {
         setInvoices(prev => prev.filter(inv => inv.id !== id));
-        db.deleteInvoice(id).catch(e => console.error("Delete Error:", e));
+        db.deleteInvoice(id).catch(e => console.error("Erreur de suppression facture:", e));
         dataSyncService.deleteInvoice(id);
     };
 
     const addClient = (client: Client) => {
         setClients(prev => [...prev, client]);
-        db.addClient(client).catch(e => console.error("Sync Error:", e));
+        db.addClient(client).catch(e => console.error("Erreur de synchro client:", e));
         dataSyncService.addClient(client);
     };
 
     const updateClient = (client: Client) => {
         setClients(prev => prev.map(c => c.id === client.id ? client : c));
-        db.updateClient(client).catch(e => console.error("Sync Error:", e));
+        db.updateClient(client).catch(e => console.error("Erreur de mise à jour client:", e));
     };
 
     const deleteClient = (id: string) => {
         setClients(prev => prev.filter(c => c.id !== id));
-        db.deleteClient(id).catch(e => console.error("Delete Error:", e));
+        db.deleteClient(id).catch(e => console.error("Erreur de suppression client:", e));
         dataSyncService.deleteClient(id);
     };
 
     const addProduct = (product: Product) => {
         setProducts(prev => [...prev, product]);
-        db.addProduct(product).catch(e => console.error("Sync Error:", e));
+        db.addProduct(product).catch(e => console.error("Erreur de synchro produit:", e));
         dataSyncService.addProduct(product);
     };
 
     const updateCompany = (newCompany: Company) => {
         setCompany(newCompany);
-        db.updateCompanySettings(newCompany).catch(e => console.error("Sync Error:", e));
+        db.updateCompanySettings(newCompany).catch(e => console.error("Erreur de synchro paramètres:", e));
         dataSyncService.updateCompany(newCompany);
     };
 
@@ -164,7 +189,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             }
             return inv;
         }));
-        db.addPayment(invoiceId, payment).catch(e => console.error("Payment Sync Error:", e));
+        db.addPayment(invoiceId, payment).catch(e => console.error("Erreur de synchro paiement:", e));
     };
 
     const deletePayment = (invoiceId: string, paymentId: string) => {
@@ -182,7 +207,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 return inv;
             });
         });
-        db.deletePayment(invoiceId, paymentId).catch(e => console.error("Payment Delete Error:", e));
+        db.deletePayment(invoiceId, paymentId).catch(e => console.error("Erreur de suppression paiement:", e));
     };
 
     return (

@@ -116,7 +116,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ clients, products, company, i
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-300">
-      <div className="bg-white dark:bg-[#27354c] p-8 rounded-[12px] shadow-sm border border-slate-200 dark:border-white/5">
+      <div className="bg-white dark:bg-[#27354c] p-8 rounded-[15px] shadow-sm border border-slate-200 dark:border-white/5">
         <h2 className="text-xl font-bold text-slate-800 dark:text-white uppercase tracking-tight mb-8">Détails de la Facture</h2>
         
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-12">
@@ -137,7 +137,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ clients, products, company, i
               {selectedClient ? selectedClient.name : 'Chercher...'}
             </div>
             {isDropdownOpen && (
-              <div className="absolute z-50 mt-2 w-64 bg-white dark:bg-slate-800 rounded-[12px] shadow-2xl border border-slate-100 dark:border-white/10 overflow-hidden">
+              <div className="absolute z-50 mt-2 w-64 bg-white dark:bg-slate-800 rounded-[15px] shadow-2xl border border-slate-100 dark:border-white/10 overflow-hidden">
                 <div className="p-3 bg-slate-50 dark:bg-slate-900/50"><input type="text" value={clientSearch} onChange={(e) => setClientSearch(e.target.value)} className="w-full px-3 py-2 border rounded-[8px] text-xs outline-none dark:bg-slate-800 dark:text-white dark:border-white/5" /></div>
                 <div className="max-h-60 overflow-y-auto">
                   {clients.filter(c => c.name.toLowerCase().includes(clientSearch.toLowerCase())).map(c => (
@@ -155,7 +155,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ clients, products, company, i
 
         <div className="space-y-4 mb-12">
           {items.map((item) => (
-            <div key={item.id} className="grid grid-cols-12 gap-4 items-center p-4 bg-slate-50 dark:bg-slate-900/40 rounded-[12px] border border-slate-100 dark:border-white/5">
+            <div key={item.id} className="grid grid-cols-12 gap-4 items-center p-4 bg-slate-50 dark:bg-slate-900/40 rounded-[15px] border border-slate-100 dark:border-white/5">
               <div className="col-span-4"><select value={item.productId || ''} onChange={(e) => handleItemChange(item.id!, 'productId', e.target.value)} className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/5 rounded-[8px] px-3 py-2 text-xs font-bold dark:text-white"><option value="">Produit...</option>{products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select></div>
               <div className="col-span-2"><input type="number" value={item.quantity} onChange={(e) => handleItemChange(item.id!, 'quantity', parseFloat(e.target.value))} className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/5 rounded-[8px] px-3 py-2 text-xs text-center font-bold dark:text-white" /></div>
               <div className="col-span-2"><input type="number" value={item.price} onChange={(e) => handleItemChange(item.id!, 'price', parseFloat(e.target.value))} className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/5 rounded-[8px] px-3 py-2 text-xs text-right font-bold dark:text-white" /></div>
@@ -163,12 +163,12 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ clients, products, company, i
               <div className="col-span-1 text-center"><button type="button" onClick={() => handleRemoveItem(item.id!)} className="text-rose-400"><i className="fas fa-trash-alt"></i></button></div>
             </div>
           ))}
-          <button type="button" onClick={handleAddItem} className="w-full py-4 border-2 border-dashed border-slate-100 dark:border-white/10 rounded-[12px] text-slate-400 text-[10px] font-black uppercase">Ajouter une ligne</button>
+          <button type="button" onClick={handleAddItem} className="w-full py-4 border-2 border-dashed border-slate-100 dark:border-white/10 rounded-[15px] text-slate-400 text-[10px] font-black uppercase">Ajouter une ligne</button>
         </div>
 
         <div className="flex flex-col md:flex-row justify-between gap-12">
-          <textarea value={notes} onChange={(e) => setNotes(e.target.value)} className="flex-1 bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-white/5 rounded-[12px] p-5 text-xs min-h-[140px] dark:text-slate-200" placeholder="Notes..."></textarea>
-          <div className="w-full md:w-[350px] p-8 bg-slate-50 dark:bg-slate-900/40 rounded-[12px] space-y-4 shadow-inner border border-slate-100 dark:border-white/5">
+          <textarea value={notes} onChange={(e) => setNotes(e.target.value)} className="flex-1 bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-white/5 rounded-[15px] p-5 text-xs min-h-[140px] dark:text-slate-200" placeholder="Notes..."></textarea>
+          <div className="w-full md:w-[350px] p-8 bg-slate-50 dark:bg-slate-900/40 rounded-[15px] space-y-4 shadow-inner border border-slate-100 dark:border-white/5">
              <div className="flex items-center justify-between pb-4 border-b border-slate-200/50 dark:border-white/5">
                <span className="text-[10px] font-black uppercase text-indigo-600 dark:text-indigo-400 tracking-widest">Activer la TVA (20%)</span>
                <button 

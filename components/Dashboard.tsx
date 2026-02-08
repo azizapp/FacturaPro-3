@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Invoice, Client, InvoiceStatus } from '../types';
@@ -36,23 +35,57 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, clients }) => {
     });
   }, [invoices]);
 
+  // Aggregation of sales by specific products/brands
+  const salesByProduct = useMemo(() => {
+    const targetGammas = [
+      "APOLLO™ CLIP EASE",
+      "APOLLO™ EXCLUSIVE",
+      "APOLLO™ MINISTARS",
+      "APOLLO™ SUNGLASSES",
+      "APOLLO™EYEWEAR",
+      "LENZO BRAND"
+    ];
+
+    const map = new Map<string, number>();
+    // Initialize map with 0 for all target gammas to show them even if 0 sales
+    targetGammas.forEach(g => map.set(g, 0));
+
+    invoices.forEach(inv => {
+      inv.items.forEach(item => {
+        const prodName = (item.productName || "").toUpperCase();
+        const matchedGamma = targetGammas.find(gamma => 
+          prodName.includes(gamma.toUpperCase())
+        );
+        
+        if (matchedGamma) {
+          map.set(matchedGamma, (map.get(matchedGamma) || 0) + item.quantity);
+        }
+      });
+    });
+
+    return Array.from(map.entries())
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count);
+  }, [invoices]);
+
   const handleAiAnalysis = async () => {
     setAnalyzing(true);
     try {
       const result = await summarizeInvoices(invoices);
       setAiAnalysis(result);
     } catch (error) {
-      console.error(error);
+      console.error("Erreur analyse IA:", error);
     } finally {
       setAnalyzing(false);
     }
   };
 
   const isDark = theme === 'dark';
+  const maxSales = salesByProduct.length > 0 ? Math.max(...salesByProduct.map(s => s.count), 1) : 1;
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
-      {/* Metrics Row - Compact & Aesthetic */}
+    <div className="space-y-6 animate-in fade-in duration-500 pb-12">
+      {/* Metrics Row */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard title="Chiffre d'Affaires" value={stats.totalTtc} icon="fa-chart-line" color="indigo" theme={theme} />
         <MetricCard title="Total Encaissé" value={stats.totalPaid} icon="fa-wallet" color="emerald" theme={theme} />
@@ -62,7 +95,7 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, clients }) => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Chart */}
-        <div className="lg:col-span-2 bg-white dark:bg-slate-900 p-6 rounded-[24px] border border-slate-200 dark:border-white/5 shadow-sm">
+        <div className="lg:col-span-2 bg-white dark:bg-slate-900 p-6 rounded-[15px] border border-slate-200 dark:border-white/5 shadow-sm">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-sm font-black uppercase tracking-widest dark:text-white flex items-center">
               <span className="w-1 h-4 bg-indigo-500 rounded-full mr-2"></span>
@@ -82,7 +115,7 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, clients }) => {
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10}} dy={10} />
                 <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10}} tickFormatter={(v) => `${v/1000}k`} />
                 <Tooltip 
-                  contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', backgroundColor: isDark ? '#0f172a' : '#fff'}}
+                  contentStyle={{borderRadius: '15px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', backgroundColor: isDark ? '#0f172a' : '#fff'}}
                   itemStyle={{fontWeight: 'bold', color: '#6366f1', fontSize: '12px'}}
                 />
                 <Area type="monotone" dataKey="amount" stroke="#6366f1" strokeWidth={3} fill="url(#colorAmt)" animationDuration={1500} />
@@ -91,8 +124,8 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, clients }) => {
           </div>
         </div>
 
-        {/* AI Sidebar - Slightly more compact */}
-        <div className="bg-[#27354c] rounded-[24px] p-6 text-white shadow-xl relative overflow-hidden flex flex-col border border-white/5">
+        {/* AI Sidebar */}
+        <div className="bg-[#27354c] rounded-[15px] p-6 text-white shadow-xl relative overflow-hidden flex flex-col border border-white/5">
           <div className="relative z-10 flex-1">
             <div className="flex items-center space-x-2 mb-6">
               <div className="w-10 h-10 bg-white/10 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/10">
@@ -140,12 +173,49 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, clients }) => {
           <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-indigo-500/5 rounded-full blur-3xl"></div>
         </div>
       </div>
+
+      {/* Sales Performance Table */}
+      <div className="bg-white dark:bg-slate-900 rounded-[15px] border border-slate-200 dark:border-white/5 shadow-sm p-8 overflow-hidden">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h3 className="text-base font-black text-slate-800 dark:text-white uppercase tracking-tight">Performance des Ventes</h3>
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Volume des produits vendus par gamme</p>
+          </div>
+          <button className="text-indigo-600 dark:text-indigo-400 text-xs font-bold hover:underline">Voir détails</button>
+        </div>
+
+        <div className="space-y-8">
+          {salesByProduct.length > 0 ? salesByProduct.map((product, idx) => (
+            <div key={product.name} className="flex items-center space-x-6">
+              <div className={`w-12 h-12 rounded-full flex items-center justify-center font-black text-xs shrink-0 shadow-sm border-2 ${idx % 2 === 0 ? 'bg-indigo-50 text-indigo-600 border-indigo-100 dark:bg-indigo-500/10 dark:border-indigo-500/20' : 'bg-emerald-50 text-emerald-600 border-emerald-100 dark:bg-emerald-500/10 dark:border-emerald-500/20'}`}>
+                {product.name.charAt(0).toUpperCase()}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-xs font-black text-slate-700 dark:text-slate-200 truncate pr-4">{product.name}</span>
+                  <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">{product.count} VENTES</span>
+                </div>
+                <div className="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                  <div 
+                    className={`h-full transition-all duration-1000 ${idx % 2 === 0 ? 'bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.5)]' : 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]'}`}
+                    style={{ width: `${(product.count / maxSales) * 100}%` }}
+                  ></div>
+                </div>
+              </div>
+            </div>
+          )) : (
+            <div className="text-center py-8 text-slate-400 italic text-xs">
+              Aucune donnée de vente disponible pour le moment.
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 };
 
 const MetricCard: React.FC<{title: string, value: number, icon: string, color: string, isCurrency?: boolean, theme?: string}> = ({title, value, icon, color, isCurrency = true, theme}) => {
-  const colorMap: any = {
+  const colorMap: Record<string, string> = {
     indigo: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400',
     emerald: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
     rose: 'bg-rose-500/10 text-rose-600 dark:text-rose-400',
@@ -153,10 +223,9 @@ const MetricCard: React.FC<{title: string, value: number, icon: string, color: s
   };
 
   return (
-    <div className="bg-white dark:bg-slate-900 p-4 rounded-[20px] border border-slate-200 dark:border-white/5 shadow-sm group hover:-translate-y-1 hover:shadow-md transition-all duration-300">
+    <div className="bg-white dark:bg-slate-900 p-4 rounded-[15px] border border-slate-200 dark:border-white/5 shadow-sm group hover:-translate-y-1 hover:shadow-md transition-all duration-300">
       <div className="flex items-center space-x-3">
-        {/* Icon & Value on the same row */}
-        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 ${colorMap[color]}`}>
+        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 ${colorMap[color] || 'bg-slate-500/10 text-slate-600'}`}>
           <i className={`fas ${icon} text-sm`}></i>
         </div>
         <div className="flex-1 min-w-0">
@@ -166,7 +235,6 @@ const MetricCard: React.FC<{title: string, value: number, icon: string, color: s
           </h4>
         </div>
       </div>
-      {/* Label below */}
       <div className="mt-2 pl-0.5">
         <p className="text-[9px] font-bold uppercase tracking-[0.1em] text-slate-400 dark:text-slate-500">
           {title}

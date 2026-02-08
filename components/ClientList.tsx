@@ -60,7 +60,7 @@ const ClientList: React.FC<ClientListProps> = ({ clients, invoices, onEditClient
         />
       </div>
 
-      <div className="bg-white dark:bg-[#27354c] rounded-[12px] shadow-sm border border-slate-200 dark:border-white/5 overflow-hidden">
+      <div className="bg-white dark:bg-[#27354c] rounded-[15px] shadow-sm border border-slate-200 dark:border-white/5 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead className="bg-slate-50 dark:bg-slate-900/40 border-b border-slate-100 dark:border-white/5">

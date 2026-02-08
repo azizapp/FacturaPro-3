@@ -54,11 +54,11 @@
 
 /* Component Enhancements */
 .card-premium {
-  @apply bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/5 rounded-[24px] shadow-sm transition-all duration-300 hover:shadow-xl hover:shadow-indigo-500/5 hover:-translate-y-1;
+  @apply bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/5 rounded-[15px] shadow-sm transition-all duration-300 hover:shadow-xl hover:shadow-indigo-500/5 hover:-translate-y-1;
 }
 
 .glass-panel {
-  @apply bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border border-white/20 dark:border-white/5 rounded-[32px];
+  @apply bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border border-white/20 dark:border-white/5 rounded-[15px];
 }
 
 /* Table refinements */
