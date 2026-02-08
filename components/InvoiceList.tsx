@@ -73,18 +73,135 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ invoices, clients, company, o
   const totalPieces = clientInvoices.reduce((sum, inv) => sum + inv.items.reduce((s, item) => s + item.quantity, 0), 0);
   const soldeDebiteur = totalInvoiced - totalCollected;
 
-  const handleShareWhatsApp = () => {
+  const handleShareWhatsApp = async () => {
     if (!selectedClient) return;
     const phone = (selectedClient.gsm1 || selectedClient.phone || "").replace(/\s+/g, '');
-    const message = encodeURIComponent(
-      `*RELEVÉ DE COMPTE : ${selectedClient.name}*\n` +
-      `Bonjour,\n\nVeuillez trouver le récapitulatif de votre compte chez *${company.name}* :\n\n` +
-      `• *Cumul Ventes :* ${totalInvoiced.toLocaleString()} MAD\n` +
-      `• *Cumul Règlements :* ${totalCollected.toLocaleString()} MAD\n` +
-      `• *SOLDE DÉBITEUR :* ${soldeDebiteur.toLocaleString()} MAD\n\n` +
-      `Merci de votre confiance.`
-    );
-    window.open(`https://wa.me/${phone}?text=${message}`, '_blank');
+
+    const loadScript = (src: string) => new Promise<void>((resolve, reject) => {
+      if (document.querySelector(`script[src="${src}"]`)) return resolve();
+      const s = document.createElement('script');
+      s.src = src;
+      s.onload = () => resolve();
+      s.onerror = () => reject(new Error(`Failed to load ${src}`));
+      document.head.appendChild(s);
+    });
+
+    try {
+      // Build printable HTML fragment
+      const rows = clientInvoices.map(inv => `
+        <tr>
+          <td style="padding:8px;border:1px solid #ddd">${new Date(inv.date).toLocaleDateString('fr-FR')}</td>
+          <td style="padding:8px;border:1px solid #ddd">${inv.number}</td>
+          <td style="padding:8px;border:1px solid #ddd;text-align:right">${inv.grandTotal.toLocaleString('fr-FR')}</td>
+        </tr>
+      `).join('');
+
+      const html = `
+        <div style="font-family:Arial,Helvetica,sans-serif;color:#111;padding:6px;max-width:800px;font-size:8px;line-height:1.1">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <h2 style="margin:0;font-size:10px">${company.name}</h2>
+              <div style="font-size:8px">Client: ${selectedClient.name}</div>
+            </div>
+            <div style="text-align:right;font-size:8px">
+              <strong>Relevé de compte</strong>
+              <div>${new Date().toLocaleDateString('fr-FR')}</div>
+            </div>
+          </div>
+          <div style="margin-top:8px;font-size:8px">
+            <div>Cumul Ventes: <strong>${totalInvoiced.toLocaleString('fr-FR')} MAD</strong></div>
+            <div>Cumul Règlements: <strong>${totalCollected.toLocaleString('fr-FR')} MAD</strong></div>
+            <div>Solde Débiteur: <strong>${soldeDebiteur.toLocaleString('fr-FR')} MAD</strong></div>
+          </div>
+          <table style="width:100%;border-collapse:collapse;margin-top:8px;font-size:8px">
+            <thead>
+              <tr>
+                <th style="border:1px solid #ddd;padding:4px;background:#f5f5f5;text-align:left">Date</th>
+                <th style="border:1px solid #ddd;padding:4px;background:#f5f5f5;text-align:left">Réf. Facture</th>
+                <th style="border:1px solid #ddd;padding:4px;background:#f5f5f5;text-align:right">Total TTC</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows}
+            </tbody>
+          </table>
+        </div>`;
+
+      // Create off-screen container (must be visible to html2canvas)
+      const container = document.createElement('div');
+      container.style.position = 'fixed';
+      container.style.left = '-10000px';
+      container.style.top = '0';
+      container.style.width = '800px';
+      container.style.background = 'white';
+      container.innerHTML = html;
+      document.body.appendChild(container);
+
+      // Load html2canvas and jsPDF (UMD) from CDN if not already loaded
+      // html2canvas global: html2canvas
+      // jspdf UMD exposes window.jspdf with .jsPDF
+      if (!(window as any).html2canvas) {
+        await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+      }
+      if (!(window as any).jspdf) {
+        await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+      }
+
+      const html2canvas = (window as any).html2canvas;
+      const { jsPDF } = (window as any).jspdf;
+
+      // Render container to canvas
+      const canvas = await html2canvas(container, { scale: 2, useCORS: true });
+      const imgData = canvas.toDataURL('image/png');
+
+      // Create PDF sized to A4 and split into pages if needed
+      const pdf = new jsPDF({ unit: 'pt', format: 'a4' });
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const margin = 20;
+      const availableWidth = pdfWidth - margin * 2;
+      const availableHeight = pdfHeight - margin * 2;
+
+      const scale = availableWidth / canvas.width;
+      const imgWidth = canvas.width * scale;
+      const imgHeight = canvas.height * scale;
+
+      if (imgHeight <= availableHeight) {
+        // Single page
+        pdf.addImage(imgData, 'PNG', margin, margin, imgWidth, imgHeight);
+      } else {
+        // Multi-page: draw slices of the canvas per page
+        const srcPageHeight = Math.floor(availableHeight / scale);
+        const totalPages = Math.ceil(canvas.height / srcPageHeight);
+        for (let p = 0; p < totalPages; p++) {
+          const sY = p * srcPageHeight;
+          const sH = Math.min(srcPageHeight, canvas.height - sY);
+          const pageCanvas = document.createElement('canvas') as HTMLCanvasElement;
+          pageCanvas.width = canvas.width;
+          pageCanvas.height = sH;
+          const ctx = pageCanvas.getContext('2d') as CanvasRenderingContext2D;
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
+          ctx.drawImage(canvas, 0, sY, canvas.width, sH, 0, 0, canvas.width, sH);
+          const pageData = pageCanvas.toDataURL('image/png');
+          const pageImgHeight = sH * scale;
+          pdf.addImage(pageData, 'PNG', margin, margin, imgWidth, pageImgHeight);
+          if (p < totalPages - 1) pdf.addPage();
+        }
+      }
+
+      const fileName = `${company.name.replace(/\s+/g, '_')}_releve_${selectedClient.name.replace(/\s+/g, '_')}.pdf`;
+      pdf.save(fileName);
+
+      // Cleanup
+      document.body.removeChild(container);
+
+      // Open WhatsApp chat informing the client
+      const message = encodeURIComponent(`Bonjour ${selectedClient.name},\\n\\nJe vous ai envoyé votre relevé de compte (${fileName}). Veuillez l'envoyer via ce chat.`);
+      window.open(`https://wa.me/${phone}?text=${message}`, '_blank');
+    } catch (err) {
+      console.error('Erreur partage WhatsApp:', err);
+    }
   };
 
   const handleShareEmail = () => {

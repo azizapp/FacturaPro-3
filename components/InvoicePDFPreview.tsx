@@ -13,10 +13,6 @@ const InvoicePDFPreview: React.FC<InvoicePDFPreviewProps> = ({ invoices, company
   const [isDownloading, setIsDownloading] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
 
-  const handlePrint = () => {
-    window.print();
-  };
-
   const handleWhatsApp = async () => {
     if (invoices.length === 0) return;
     const element = document.querySelector('.printable-container');
@@ -84,37 +80,34 @@ const InvoicePDFPreview: React.FC<InvoicePDFPreviewProps> = ({ invoices, company
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md print:bg-white print:p-0 overflow-hidden print:overflow-visible font-sans text-slate-900">
       <div className="bg-white w-full max-w-6xl h-[95vh] rounded-[16px] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 print:h-auto print:w-full print:shadow-none print:rounded-none print:static print:block relative">
         
-        {/* Barre d'outils (Masquée à l'impression) */}
-        <div className="px-8 py-5 border-b border-slate-100 flex items-center justify-between bg-white shrink-0 print:hidden relative z-20">
-          <div className="flex items-center space-x-4">
-            <div className="w-12 h-12 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-200">
-              <i className="fas fa-file-pdf text-xl"></i>
+        {/* Barre d'outils */}
+        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-white shrink-0 print:hidden relative z-20">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center text-white shadow-md">
+              <i className="fas fa-file-pdf text-lg"></i>
             </div>
             <div>
-              <h4 className="text-lg font-black text-slate-800 uppercase tracking-tight">Exportation PDF</h4>
-              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{invoices.length} document(s) prêt(s)</p>
+              <h4 className="text-sm font-black text-slate-800 uppercase tracking-tight">Exportation PDF</h4>
+              <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">{invoices.length} document(s)</p>
             </div>
           </div>
-          <div className="flex items-center space-x-3">
-            <button type="button" onClick={handleWhatsApp} disabled={isSharing} className="px-6 py-3 bg-[#25D366] hover:bg-[#1ebd59] text-white rounded-xl font-black text-[11px] uppercase tracking-widest transition-all flex items-center disabled:opacity-50">
-              {isSharing ? <i className="fas fa-circle-notch animate-spin mr-2"></i> : <i className="fab fa-whatsapp mr-2 text-lg"></i>}
+          <div className="flex items-center space-x-2">
+            <button type="button" onClick={handleWhatsApp} disabled={isSharing} className="px-4 py-2 bg-[#25D366] hover:bg-[#1ebd59] text-white rounded-lg font-black text-[10px] uppercase tracking-widest transition-all flex items-center disabled:opacity-50">
+              <i className="fab fa-whatsapp mr-2"></i>
               Partager
             </button>
-            <button type="button" onClick={handleDownload} disabled={isDownloading} className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black text-[11px] uppercase tracking-widest transition-all flex items-center disabled:opacity-50">
-              {isDownloading ? <i className="fas fa-circle-notch animate-spin mr-2"></i> : <i className="fas fa-download mr-2"></i>}
-              Télécharger
+            <button type="button" onClick={handleDownload} disabled={isDownloading} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-black text-[10px] uppercase tracking-widest transition-all flex items-center disabled:opacity-50">
+              <i className="fas fa-download mr-2"></i>
+              Tél.
             </button>
-            <button onClick={handlePrint} className="px-6 py-3 bg-white border border-slate-200 rounded-xl font-bold text-[11px] uppercase tracking-widest hover:bg-slate-50 transition-colors">
-              <i className="fas fa-print mr-2"></i>Imprimer
-            </button>
-            <button onClick={onClose} className="px-6 py-3 bg-slate-100 rounded-xl font-bold text-[11px] uppercase tracking-widest text-slate-400 hover:bg-slate-200 transition-colors">
+            <button onClick={onClose} className="px-4 py-2 bg-slate-100 rounded-lg font-bold text-[10px] uppercase tracking-widest text-slate-400 hover:bg-slate-200 transition-colors">
               Fermer
             </button>
           </div>
         </div>
 
         {/* Zone de prévisualisation */}
-        <div className="flex-1 overflow-y-auto bg-slate-100 p-10 custom-scrollbar print:p-0 print:bg-white print:overflow-visible">
+        <div className="flex-1 overflow-y-auto bg-slate-100 p-6 custom-scrollbar print:p-0 print:bg-white print:overflow-visible">
           <div className="printable-container mx-auto print:w-full">
             {invoices.map((invoice, index) => {
               const client = clients.find(c => c.id === invoice.clientId);
@@ -123,77 +116,68 @@ const InvoicePDFPreview: React.FC<InvoicePDFPreviewProps> = ({ invoices, company
               return (
                 <div 
                   key={invoice.id} 
-                  className={`printable-sheet mx-auto bg-white p-[15mm] shadow-2xl print:shadow-none print:p-[10mm] print:m-0 w-[210mm] min-h-[297mm] flex flex-col relative overflow-hidden ${index < invoices.length - 1 ? 'mb-10' : ''}`}
+                  className={`printable-sheet mx-auto bg-white p-[10mm] shadow-xl print:shadow-none print:p-[10mm] print:m-0 w-[210mm] h-[297mm] flex flex-col relative overflow-hidden ${index < invoices.length - 1 ? 'mb-8' : ''}`}
                   style={{ pageBreakAfter: 'always' }}
                 >
                   
-                  {/* Filigrane d'arrière-plan (Logo central) */}
-                  <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none z-0">
+                  {/* Filigrane discret */}
+                  <div className="absolute inset-0 flex items-center justify-center opacity-[0.02] pointer-events-none z-0">
                     {company.logo ? (
-                      <img src={company.logo} className="w-[120mm] h-[120mm] object-contain" alt="Watermark" />
+                      <img src={company.logo} className="w-[80mm] h-[80mm] object-contain" alt="Watermark" />
                     ) : (
-                      <div className="text-[100mm] font-black italic select-none">AP</div>
+                      <div className="text-[60mm] font-black italic select-none">AP</div>
                     )}
                   </div>
 
                   <div className="relative z-10 flex flex-col h-full">
                     
-                    {/* Header: Logo & Client Box */}
-                    <div className="flex justify-between items-start mb-16">
+                    {/* Header: Logo (Even Bigger) & Client Box */}
+                    <div className="flex justify-between items-start mb-6">
                       <div className="w-[220px]">
                         {company.logo ? (
-                          <img src={company.logo} className="w-full object-contain" alt="Apollo Eyewear" />
+                          <img src={company.logo} className="w-full object-contain" alt="Logo" />
                         ) : (
-                          <div className="text-4xl font-black text-[#1a2b5e] italic leading-none">APOLLO<br/><span className="text-xs tracking-[0.4em] font-normal not-italic opacity-60">EYEWEAR</span></div>
+                          <div className="text-2xl font-black text-[#1a2b5e] italic leading-tight">APOLLO<br/><span className="text-[10px] tracking-[0.4em] font-normal not-italic opacity-60 uppercase">Eyewear</span></div>
                         )}
                       </div>
                       
-                      <div className="w-[450px] border border-slate-300 rounded-[24px] p-8 text-[#1a2b5e]">
-                        <h2 className="text-2xl font-black mb-4">Client: {client?.name}</h2>
-                        <div className="text-lg space-y-2 font-medium opacity-90">
-                          <p>{client?.address || "Adresse non spécifiée"}</p>
+                      <div className="w-[320px] border border-slate-200 rounded-[10px] p-4 text-[#1a2b5e] bg-slate-50/40">
+                        <h2 className="text-sm font-black mb-1.5 uppercase tracking-wide">Client: {client?.name}</h2>
+                        <div className="text-[12px] space-y-1 font-medium opacity-95 leading-tight">
+                          <p className="truncate">{client?.address || "Adresse non spécifiée"}</p>
                           <p>{client?.city && `${client.city}`}</p>
-                          <p>ICE: {client?.gsm1 || "003158315000038"}</p>
+                          <p className="font-bold text-indigo-700">ICE: {client?.ice || "S/O"}</p>
                         </div>
                       </div>
                     </div>
 
                     {/* Titre Facture */}
-                    <div className="mb-12">
-                      <h1 className="text-4xl font-black text-[#1a2b5e] mb-10">Facture N° : {invoice.number}</h1>
-                      <div className="flex space-x-12 text-2xl font-medium text-[#1a2b5e]">
-                        <p>Ville: <span className="capitalize">{client?.city || company.city || "oujda"}</span></p>
+                    <div className="mb-5 bg-[#f4f7fe]/60 p-3 rounded-lg border-l-[6px] border-indigo-600">
+                      <h1 className="text-base font-black text-[#1a2b5e]">Facture N° : {invoice.number}</h1>
+                      <div className="flex gap-x-6 text-[11px] font-bold text-[#1a2b5e]/80 mt-1">
+                        <p>Ville: <span className="capitalize">{client?.city || company.city || "Oujda"}</span></p>
                         <p>Date: {new Date(invoice.date).toLocaleDateString('fr-FR')}</p>
                       </div>
                     </div>
 
-                    {/* Tableau des produits */}
-                    <div className="mb-12 flex-1">
+                    {/* Tableau des produits - Font size 13px */}
+                    <div className="mb-6">
                       <table className="w-full border-collapse">
                         <thead>
-                          <tr className="bg-[#f4f7fe]">
-                            <th className="py-4 px-6 text-left text-[14px] font-black text-[#1a2b5e] border-b border-slate-200">Référence Produit</th>
-                            <th className="py-4 px-6 text-center text-[14px] font-black text-[#1a2b5e] border-b border-slate-200">Prix Unitaire</th>
-                            <th className="py-4 px-6 text-center text-[14px] font-black text-[#1a2b5e] border-b border-slate-200">Quantité</th>
-                            <th className="py-4 px-6 text-right text-[14px] font-black text-[#1a2b5e] border-b border-slate-200">Prix Total</th>
+                          <tr className="bg-[#f4f7fe] border-b-2 border-slate-200">
+                            <th className="py-2.5 px-4 text-left text-[13px] font-black text-[#1a2b5e] uppercase tracking-wider">Description</th>
+                            <th className="py-2.5 px-4 text-center text-[13px] font-black text-[#1a2b5e] w-28">P. Unit.</th>
+                            <th className="py-2.5 px-4 text-center text-[13px] font-black text-[#1a2b5e] w-20">Qté</th>
+                            <th className="py-2.5 px-4 text-right text-[13px] font-black text-[#1a2b5e] w-32">Total TTC</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                           {invoice.items.map((item, idx) => (
-                            <tr key={idx}>
-                              <td className="py-4 px-6 text-[14px] font-medium text-[#1a2b5e] uppercase">{item.productName}</td>
-                              <td className="py-4 px-6 text-[14px] font-medium text-[#1a2b5e] text-center">{item.price.toLocaleString()}</td>
-                              <td className="py-4 px-6 text-[14px] font-medium text-[#1a2b5e] text-center">{item.quantity}</td>
-                              <td className="py-4 px-6 text-[14px] font-medium text-[#1a2b5e] text-right">MAD {((item.price * item.quantity) * (1 - item.discount / 100)).toLocaleString('fr-FR', { minimumFractionDigits: 2 })}</td>
-                            </tr>
-                          ))}
-                          {/* Lignes vides pour compléter le visuel si nécessaire */}
-                          {[...Array(Math.max(0, 5 - invoice.items.length))].map((_, i) => (
-                            <tr key={`empty-${i}`} className="h-10">
-                              <td className="border-b border-slate-50"></td>
-                              <td className="border-b border-slate-50"></td>
-                              <td className="border-b border-slate-50"></td>
-                              <td className="border-b border-slate-50"></td>
+                            <tr key={idx} className="hover:bg-slate-50/50">
+                              <td className="py-2.5 px-4 text-[13px] font-semibold text-[#1a2b5e] uppercase">{item.productName}</td>
+                              <td className="py-2.5 px-4 text-[13px] font-medium text-[#1a2b5e] text-center">{item.price.toLocaleString('fr-FR', { minimumFractionDigits: 2 })}</td>
+                              <td className="py-2.5 px-4 text-[13px] font-bold text-[#1a2b5e] text-center">{item.quantity}</td>
+                              <td className="py-2.5 px-4 text-[13px] font-black text-[#1a2b5e] text-right">{((item.price * item.quantity) * (1 - item.discount / 100)).toLocaleString('fr-FR', { minimumFractionDigits: 2 })}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -201,60 +185,66 @@ const InvoicePDFPreview: React.FC<InvoicePDFPreviewProps> = ({ invoices, company
                     </div>
 
                     {/* Section Pied de Document (Notes & Totaux) */}
-                    <div className="flex justify-between items-start mt-auto mb-16 pt-8">
-                      <div className="space-y-6 max-w-md">
-                        <p className="text-xl font-medium text-[#1a2b5e]">Quantité demandée: <span className="ml-4">{totalQty}</span></p>
-                        <div className="space-y-2">
-                          <p className="text-xl font-medium text-[#1a2b5e]">Remarques:</p>
-                          <p className="text-lg text-slate-500 font-medium min-h-[40px] italic">{invoice.notes || "S/O"}</p>
+                    <div className="flex justify-between items-start pt-4 border-t-2 border-slate-100">
+                      <div className="space-y-4 max-w-sm">
+                        <div className="flex gap-6">
+                            <div>
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Qté Totale</p>
+                                <p className="text-sm font-black text-[#1a2b5e]">{totalQty}</p>
+                            </div>
+                            <div>
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Règlement</p>
+                                <p className="text-sm font-black text-[#1a2b5e]">Chèque / Virement</p>
+                            </div>
                         </div>
-                        <p className="text-xl font-medium text-[#1a2b5e]">Modalité de paiement : <span className="ml-4">Cheque</span></p>
+                        <div className="space-y-1">
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Remarques:</p>
+                          <p className="text-[11px] text-slate-600 font-medium italic leading-relaxed">{invoice.notes || "Sans remarques particulières."}</p>
+                        </div>
                         
-                        {/* Cachet & Signature */}
-                        <div className="mt-12 pt-8 relative">
+                        {/* Cachet & Signature (Size Significantly Increased) */}
+                        <div className="mt-4">
                           {company.signature ? (
-                            <img src={company.signature} className="h-40 object-contain ml-8 mix-blend-multiply opacity-90" alt="Cachet & Signature" />
+                            <img src={company.signature} className="h-48 object-contain ml-4 mix-blend-multiply opacity-95" alt="Signature" />
                           ) : (
-                            <div className="w-56 h-32 border border-dashed border-slate-200 rounded-lg flex items-center justify-center text-slate-300 text-xs">Cachet & Signature</div>
+                            <div className="w-44 h-24 border-2 border-dashed border-slate-200 rounded-xl flex items-center justify-center text-[10px] text-slate-300 uppercase font-black">Cachet & Signature</div>
                           )}
                         </div>
                       </div>
 
-                      <div className="w-[320px]">
+                      <div className="w-[300px]">
                         <table className="w-full border-collapse">
                           <tbody>
                             <tr>
-                              <td className="py-3 px-6 text-xl font-medium text-[#1a2b5e] bg-[#f4f7fe]/50 border-b border-white">Montant HT</td>
-                              <td className="py-3 px-6 text-xl font-medium text-[#1a2b5e] bg-[#f4f7fe]/50 border-b border-white text-right">MAD {invoice.subtotal.toLocaleString('fr-FR', { minimumFractionDigits: 2 })}</td>
+                              <td className="py-2 px-4 text-[12px] font-bold text-[#1a2b5e] bg-slate-50 border-b border-white">Montant HT</td>
+                              <td className="py-2 px-4 text-[12px] font-bold text-[#1a2b5e] bg-slate-50 border-b border-white text-right">{invoice.subtotal.toLocaleString('fr-FR', { minimumFractionDigits: 2 })}</td>
+                            </tr>
+                            {invoice.discountAmount > 0 && (
+                            <tr>
+                              <td className="py-2 px-4 text-[12px] font-bold text-rose-600 bg-rose-50/40 border-b border-white">Remise</td>
+                              <td className="py-2 px-4 text-[12px] font-bold text-rose-600 bg-rose-50/40 border-b border-white text-right">-{invoice.discountAmount.toLocaleString('fr-FR', { minimumFractionDigits: 2 })}</td>
+                            </tr>
+                            )}
+                            <tr>
+                              <td className="py-2 px-4 text-[12px] font-bold text-[#1a2b5e] bg-slate-50 border-b border-white">TVA (20%)</td>
+                              <td className="py-2 px-4 text-[12px] font-bold text-[#1a2b5e] bg-slate-50 border-b border-white text-right">{invoice.tvaTotal.toLocaleString('fr-FR', { minimumFractionDigits: 2 })}</td>
                             </tr>
                             <tr>
-                              <td className="py-3 px-6 text-xl font-medium text-[#1a2b5e] bg-slate-100 border-b border-white">Remise %</td>
-                              <td className="py-3 px-6 text-xl font-medium text-[#1a2b5e] bg-slate-100 border-b border-white text-right">MAD {invoice.discountAmount.toLocaleString('fr-FR', { minimumFractionDigits: 2 })}</td>
-                            </tr>
-                            <tr>
-                              <td className="py-3 px-6 text-xl font-medium text-[#1a2b5e] bg-[#f4f7fe]/50 border-b border-white">TVA 20%</td>
-                              <td className="py-3 px-6 text-xl font-medium text-[#1a2b5e] bg-[#f4f7fe]/50 border-b border-white text-right">MAD {invoice.tvaTotal.toLocaleString('fr-FR', { minimumFractionDigits: 2 })}</td>
-                            </tr>
-                            <tr>
-                              <td className="py-6 px-6 text-xl font-black text-[#1a2b5e] bg-[#dbe8ff]">Montant Total TTC</td>
-                              <td className="py-6 px-6 text-xl font-black text-[#1a2b5e] bg-[#dbe8ff] text-right">MAD {invoice.grandTotal.toLocaleString('fr-FR', { minimumFractionDigits: 2 })}</td>
+                              <td className="py-4 px-4 text-base font-black text-white bg-[#1a2b5e] rounded-bl-xl uppercase tracking-tighter">Total TTC</td>
+                              <td className="py-4 px-4 text-lg font-black text-white bg-[#1a2b5e] text-right text-nowrap rounded-br-xl">{invoice.grandTotal.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} MAD</td>
                             </tr>
                           </tbody>
                         </table>
                       </div>
                     </div>
 
-                    {/* Footer Contact */}
-                    <div className="border-t border-slate-200 pt-10 text-center">
-                      <div className="flex justify-center items-center space-x-10 text-[13px] font-medium text-[#1a2b5e] mb-3">
-                        <p>Tel: {company.phone || "+212 6 88 88 90 04"}</p>
-                        <p>Email: <span className="lowercase">{company.email || "Contact@apolloeyewear.ma"}</span></p>
-                        <p>Website : <span className="lowercase underline">www.apolloeyewear.ma</span></p>
-                      </div>
-                      <div className="flex justify-center items-center space-x-10 text-[13px] font-medium text-[#1a2b5e]">
-                        <p>ICE: {company.siret || "003035634000069"}</p>
-                        <p>RC: 40941</p>
-                        <p>IF: 52401661</p>
+                    {/* Spacer flexible pour pousser le فوتر للأسفل */}
+                    <div className="flex-1"></div>
+
+                    {/* Footer - Only generic footer text remains */}
+                    <div className="mt-auto pt-4 border-t-2 border-slate-200 text-center space-y-2 bg-white pb-4">
+                      <div className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em]">
+                        {company.footer || "Propulsé par FacturaPro - www.facturapro.ma"}
                       </div>
                     </div>
 
@@ -285,9 +275,13 @@ const InvoicePDFPreview: React.FC<InvoicePDFPreviewProps> = ({ invoices, company
             page-break-after: always !important;
             box-shadow: none !important;
             border: none !important;
-            width: 100% !important;
+            width: 210mm !important;
+            height: 297mm !important;
             min-height: 297mm !important;
             -webkit-print-color-adjust: exact;
+            display: flex !important;
+            flex-direction: column !important;
+            overflow: hidden !important;
           }
         }
       `}} />

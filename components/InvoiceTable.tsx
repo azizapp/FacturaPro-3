@@ -24,7 +24,7 @@ const InvoiceTable: React.FC<InvoiceTableProps> = ({
   onEditInvoice, 
   onPdfInvoice 
 }) => {
-  const [sortField, setSortField] = useState<SortField>('date');
+  const [sortField, setSortField] = useState<SortField>('number');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [selectedStatus, setSelectedStatus] = useState<string>('');
@@ -100,6 +100,7 @@ const InvoiceTable: React.FC<InvoiceTableProps> = ({
 
     // Filter by date range
     if (dateFilter && dateFilter !== 'custom') {
+      // Fix: Use 'dateFilter' state variable instead of undefined 'filter'
       const range = getDateRange(dateFilter);
       if (range) {
         filtered = filtered.filter(inv => {
@@ -118,8 +119,6 @@ const InvoiceTable: React.FC<InvoiceTableProps> = ({
         filtered = filtered.filter(inv => new Date(inv.date) <= toDate);
       }
     }
-
-
 
     // Sort
     return filtered.sort((a, b) => {
