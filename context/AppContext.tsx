@@ -173,7 +173,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     const updateCompany = (newCompany: Company) => {
         setCompany(newCompany);
-        db.updateCompanySettings(newCompany).catch(e => console.error("Erreur de synchro paramètres:", e));
+        // Utiliser une version simplifiée de mise à jour pour éviter les problèmes de RLS si l'ID n'est pas bon
+        db.updateCompanySettings(newCompany).catch(e => {
+            console.error("Erreur de synchro paramètres:", e);
+            // Optionnel : Alerter l'utilisateur de l'erreur RLS
+            if (e.code === '42501') {
+                alert("Erreur de permission : Impossible de modifier les paramètres de l'entreprise. Vérifiez vos accès Supabase.");
+            }
+        });
         dataSyncService.updateCompany(newCompany);
     };
 

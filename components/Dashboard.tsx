@@ -36,7 +36,6 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, clients }) => {
     });
   }, [invoices]);
 
-  // Aggregation of sales by specific products/brands
   const salesByProduct = useMemo(() => {
     const targetGammas = [
       "APOLLO™ CLIP EASE",
@@ -48,7 +47,6 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, clients }) => {
     ];
 
     const map = new Map<string, number>();
-    // Initialize map with 0 for all target gammas to show them even if 0 sales
     targetGammas.forEach(g => map.set(g, 0));
 
     invoices.forEach(inv => {
@@ -86,7 +84,7 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, clients }) => {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-12">
-      {/* Metrics Row - Updated with standard layout */}
+      {/* Metrics Row */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard title="Chiffre d'Affaires" value={stats.totalTtc} icon="fa-chart-line" color="indigo" />
         <MetricCard title="Total Encaissé" value={stats.totalPaid} icon="fa-wallet" color="emerald" />
@@ -95,29 +93,35 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, clients }) => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Chart */}
-        <div className="lg:col-span-2 bg-white dark:bg-[#1b263b] p-6 rounded-[15px] border border-slate-200 dark:border-white/10 shadow-sm">
+        {/* Main Chart Container with Fixed Height to avoid ResponsiveContainer warning */}
+        <div className="lg:col-span-2 bg-white dark:bg-[#1b263b] p-6 rounded-[15px] border border-slate-200 dark:border-white/10 shadow-sm flex flex-col h-[450px]">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-sm font-black uppercase tracking-widest dark:text-white flex items-center">
               <span className="w-1 h-4 bg-indigo-500 rounded-full mr-2"></span>
               Performance Annuelle
             </h3>
           </div>
-          <div className="h-[300px] w-full">
+          <div className="flex-1 w-full min-h-0">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={monthlyData}>
+              <AreaChart data={monthlyData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorAmt" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.1} />
+                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.2} />
                     <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#1e293b' : '#f1f5f9'} />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10 }} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10 }} tickFormatter={(v) => `${v / 1000}k`} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10 }} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
                 <Tooltip
-                  contentStyle={{ borderRadius: '15px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', backgroundColor: isDark ? '#0f172a' : '#fff' }}
-                  itemStyle={{ fontWeight: 'bold', color: '#6366f1', fontSize: '12px' }}
+                  contentStyle={{ 
+                    borderRadius: '15px', 
+                    border: 'none', 
+                    boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)', 
+                    backgroundColor: isDark ? '#0f172a' : '#fff',
+                    padding: '12px'
+                  }}
+                  itemStyle={{ fontWeight: 'black', color: '#6366f1', fontSize: '12px' }}
                 />
                 <Area type="monotone" dataKey="amount" stroke="#6366f1" strokeWidth={3} fill="url(#colorAmt)" animationDuration={1500} />
               </AreaChart>
@@ -126,8 +130,8 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, clients }) => {
         </div>
 
         {/* AI Sidebar */}
-        <div className="bg-indigo-600 dark:bg-[#1b263b] rounded-[15px] p-6 text-white shadow-xl relative overflow-hidden flex flex-col border border-indigo-500/20 dark:border-white/10 transition-all duration-300">
-          <div className="relative z-10 flex-1">
+        <div className="bg-indigo-600 dark:bg-[#1b263b] rounded-[15px] p-6 text-white shadow-xl relative overflow-hidden flex flex-col border border-indigo-500/20 dark:border-white/10 transition-all duration-300 h-[450px]">
+          <div className="relative z-10 flex flex-col h-full">
             <div className="flex items-center space-x-2 mb-6">
               <div className="w-10 h-10 bg-white/10 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/10">
                 <i className="fas fa-sparkles text-indigo-400 text-lg"></i>
@@ -135,43 +139,43 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, clients }) => {
               <h3 className="font-black text-lg tracking-tight uppercase italic">Analyste <span className="text-indigo-400">Pro</span></h3>
             </div>
 
-            {analyzing ? (
-              <div className="flex flex-col items-center justify-center py-12 space-y-4">
-                <div className="w-10 h-10 border-3 border-white/20 border-t-indigo-500 rounded-full animate-spin"></div>
-                <p className="text-[10px] font-bold uppercase tracking-widest opacity-60 italic">Analyse en cours...</p>
-              </div>
-            ) : aiAnalysis ? (
-              <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2">
-                <p className="text-xs font-medium leading-relaxed bg-white/5 p-4 rounded-xl border border-white/5">{aiAnalysis.summary}</p>
-                <ul className="space-y-2">
-                  {aiAnalysis.insights.slice(0, 3).map((item: string, i: number) => (
-                    <li key={i} className="flex items-start text-[10px] font-medium">
-                      <i className="fas fa-circle-check mt-1 mr-2 text-indigo-400 text-[8px]"></i>
-                      <span className="opacity-80">{item}</span>
-                    </li>
-                  ))}
-                </ul>
-                <div className="p-4 bg-indigo-500/10 rounded-xl border border-indigo-500/20">
-                  <p className="text-[8px] font-black uppercase mb-1 tracking-widest text-indigo-300">Recommandation</p>
-                  <p className="text-[11px] italic font-bold text-slate-200">"{aiAnalysis.recommendation}"</p>
+            <div className="flex-1 overflow-y-auto custom-scrollbar pr-1">
+              {analyzing ? (
+                <div className="flex flex-col items-center justify-center py-12 space-y-4">
+                  <div className="w-10 h-10 border-3 border-white/20 border-t-indigo-500 rounded-full animate-spin"></div>
+                  <p className="text-[10px] font-bold uppercase tracking-widest opacity-60 italic">Analyse en cours...</p>
                 </div>
-                <div className="pt-2">
-                  <button onClick={handleAiAnalysis} className="w-full bg-white/20 dark:bg-indigo-600 text-white font-black py-3 rounded-xl text-[10px] uppercase tracking-widest hover:bg-white/30 dark:hover:bg-indigo-500 transition-all">
-                    Actualiser
-                  </button>
+              ) : aiAnalysis ? (
+                <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2">
+                  <p className="text-xs font-medium leading-relaxed bg-white/5 p-4 rounded-xl border border-white/5">{aiAnalysis.summary}</p>
+                  <ul className="space-y-2">
+                    {aiAnalysis.insights.slice(0, 3).map((item: string, i: number) => (
+                      <li key={i} className="flex items-start text-[10px] font-medium">
+                        <i className="fas fa-circle-check mt-1 mr-2 text-indigo-400 text-[8px]"></i>
+                        <span className="opacity-80">{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="p-4 bg-indigo-500/10 rounded-xl border border-indigo-500/20">
+                    <p className="text-[8px] font-black uppercase mb-1 tracking-widest text-indigo-300">Recommandation</p>
+                    <p className="text-[11px] italic font-bold text-slate-200">"{aiAnalysis.recommendation}"</p>
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <div className="text-center py-8 flex flex-col items-center">
-                <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-4">
-                  <i className="fas fa-brain text-3xl opacity-20"></i>
+              ) : (
+                <div className="text-center py-8 flex flex-col items-center h-full justify-center">
+                  <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-4">
+                    <i className="fas fa-brain text-3xl opacity-20"></i>
+                  </div>
+                  <p className="text-[10px] font-medium mb-6 opacity-60 uppercase tracking-widest px-4">Lancez l'intelligence artificielle pour obtenir des conseils stratégiques</p>
                 </div>
-                <p className="text-[10px] font-medium mb-6 opacity-60 uppercase tracking-widest">Lancez l'intelligence artificielle</p>
-                <button onClick={handleAiAnalysis} className="w-full bg-white text-indigo-600 dark:bg-indigo-600 dark:text-white font-black py-3 rounded-xl text-[10px] uppercase tracking-widest shadow-lg hover:bg-slate-100 dark:hover:bg-indigo-500 transition-all">
-                  Analyser les données
-                </button>
-              </div>
-            )}
+              )}
+            </div>
+            
+            <div className="pt-4 shrink-0">
+              <button onClick={handleAiAnalysis} className="w-full bg-white text-indigo-600 dark:bg-indigo-600 dark:text-white font-black py-4 rounded-xl text-[10px] uppercase tracking-widest shadow-lg hover:bg-slate-100 dark:hover:bg-indigo-500 transition-all active:scale-95">
+                {aiAnalysis ? 'Actualiser Analyse' : 'Analyser les données'}
+              </button>
+            </div>
           </div>
           <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-indigo-500/5 rounded-full blur-3xl"></div>
         </div>
@@ -184,7 +188,6 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, clients }) => {
             <h3 className="text-base font-black text-slate-800 dark:text-white uppercase tracking-tight">Performance des Ventes</h3>
             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Volume des produits vendus par gamme</p>
           </div>
-          <button className="text-indigo-600 dark:text-indigo-400 text-xs font-bold hover:underline">Voir détails</button>
         </div>
 
         <div className="space-y-8">
@@ -217,7 +220,6 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, clients }) => {
   );
 };
 
-// Updated MetricCard to match the styling of other pages (InvoiceList, etc.)
 const MetricCard: React.FC<{ title: string, value: number, icon: string, color: string, isCurrency?: boolean }> = ({ title, value, icon, color, isCurrency = true }) => {
   const colorMap: Record<string, string> = {
     indigo: 'text-indigo-600 dark:text-indigo-400 bg-indigo-500/10',

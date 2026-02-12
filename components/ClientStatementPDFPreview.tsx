@@ -27,7 +27,7 @@ const ClientStatementPDFPreview: React.FC<ClientStatementPDFPreviewProps> = ({ c
   const balance = totalInvoiced - totalCollected;
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md overflow-hidden print:overflow-visible statement-modal-container">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md overflow-hidden print:overflow-visible statement-modal-wrapper">
       <div className="bg-white w-full max-w-5xl h-[95vh] rounded-[15px] shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-8 duration-300 print:h-auto print:w-full print:shadow-none print:rounded-none print:static print:block">
         
         {/* Header - Hidden on Print */}
@@ -58,7 +58,7 @@ const ClientStatementPDFPreview: React.FC<ClientStatementPDFPreviewProps> = ({ c
         {/* Scrollable Preview Area */}
         <div className="flex-1 overflow-y-auto p-12 bg-slate-100 custom-scrollbar print:p-0 print:bg-white print:overflow-visible">
           {/* THE PRINTABLE SHEET */}
-          <div className="printable-sheet mx-auto bg-white p-[15mm] shadow-2xl border border-slate-200 print:border-none print:shadow-none print:p-8 print:m-0 w-full max-w-[900px] font-sans text-slate-900 print:max-w-none rounded-[15px]">
+          <div className="printable-sheet mx-auto bg-white p-[15mm] shadow-2xl border border-slate-200 print:border-none print:shadow-none print:p-15mm print:m-0 w-full max-w-[900px] font-sans text-slate-900 print:max-w-none rounded-[15px]">
             
             {/* Header */}
             <div className="flex justify-between items-start mb-16">
@@ -191,7 +191,12 @@ const ClientStatementPDFPreview: React.FC<ClientStatementPDFPreviewProps> = ({ c
       <style dangerouslySetInnerHTML={{ __html: `
         @media print {
           @page { size: A4 portrait; margin: 0; }
-          * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+          
+          * { 
+            -webkit-print-color-adjust: exact !important; 
+            print-color-adjust: exact !important; 
+            color-adjust: exact !important;
+          }
           
           html, body {
             margin: 0 !important;
@@ -201,12 +206,19 @@ const ClientStatementPDFPreview: React.FC<ClientStatementPDFPreviewProps> = ({ c
             height: auto !important;
           }
 
-          body > #root > div:not(.statement-modal-container) {
-            display: none !important;
+          /* Masquer tout le contenu de l'app par défaut */
+          body > * {
+            visibility: hidden !important;
           }
 
-          .statement-modal-container {
-            position: static !important;
+          /* Rendre visible uniquement le relevé de compte */
+          .statement-modal-wrapper, 
+          .statement-modal-wrapper * {
+            visibility: visible !important;
+          }
+
+          .statement-modal-wrapper {
+            position: absolute !important;
             left: 0 !important;
             top: 0 !important;
             width: 100% !important;
@@ -214,22 +226,24 @@ const ClientStatementPDFPreview: React.FC<ClientStatementPDFPreviewProps> = ({ c
             margin: 0 !important;
             background: white !important;
             display: block !important;
-            overflow: visible !important;
-            z-index: 9999 !important;
+            z-index: 999999 !important;
           }
 
           .print\\:hidden, .bg-slate-900\\/60, .backdrop-blur-md {
             display: none !important;
+            visibility: hidden !important;
           }
 
           .printable-sheet {
             box-shadow: none !important;
             border: none !important;
-            width: 100% !important;
-            margin: 0 !important;
+            width: 210mm !important;
+            min-height: 297mm !important;
+            margin: 0 auto !important;
             padding: 15mm !important;
             background: white !important;
             border-radius: 0 !important;
+            box-sizing: border-box !important;
           }
 
           .bg-slate-50 {
@@ -241,8 +255,8 @@ const ClientStatementPDFPreview: React.FC<ClientStatementPDFPreviewProps> = ({ c
             background-color: #0f172a !important;
           }
 
-          .text-white { color: white !important; }
-          .text-slate-900 { color: #0f172a !important; }
+          .text-white { color: black !important; }
+          .text-slate-900 { color: black !important; }
         }
       `}} />
     </div>

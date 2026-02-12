@@ -81,7 +81,7 @@ const InvoicePDFPreview: React.FC<InvoicePDFPreviewProps> = ({ invoices, company
   };
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md overflow-hidden print:overflow-visible font-sans text-slate-900 invoice-modal-container">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md overflow-hidden print:overflow-visible font-sans text-slate-900 invoice-modal-wrapper">
       <div className="bg-white w-full max-w-6xl h-[95vh] rounded-[15px] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 print:h-auto print:w-full print:shadow-none print:rounded-none print:static print:block relative">
 
         {/* Barre d'outils */}
@@ -125,7 +125,7 @@ const InvoicePDFPreview: React.FC<InvoicePDFPreviewProps> = ({ invoices, company
                 <div
                   key={invoice.id}
                   className={`printable-sheet mx-auto bg-white p-[10mm] shadow-xl print:shadow-none print:p-[10mm] print:m-0 w-[210mm] h-[297mm] flex flex-col relative overflow-hidden ${index < invoices.length - 1 ? 'mb-8' : ''}`}
-                  style={{ pageBreakAfter: 'always' }}
+                  style={{ pageBreakAfter: 'always', boxSizing: 'border-box' }}
                 >
 
                   {/* Filigrane discret */}
@@ -270,14 +270,14 @@ const InvoicePDFPreview: React.FC<InvoicePDFPreviewProps> = ({ invoices, company
             margin: 0; 
           }
           
-          /* Force colors and backgrounds */
+          /* Forcer l'affichage des couleurs et fonds */
           * {
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
             color-adjust: exact !important;
           }
 
-          /* Reset body and hide main UI */
+          /* Réinitialisation critique pour éviter les pages blanches */
           html, body {
             margin: 0 !important;
             padding: 0 !important;
@@ -286,57 +286,63 @@ const InvoicePDFPreview: React.FC<InvoicePDFPreviewProps> = ({ invoices, company
             background: white !important;
           }
 
-          /* Hide everything except the printable container and its parents */
-          body > #root > div:not(.invoice-modal-container) {
-            display: none !important;
+          /* Cache tout SAUF ce qu'on veut imprimer */
+          /* On utilise visibility au lieu de display:none sur le root car display:none sur parent tue l'impression des enfants */
+          body > * {
+            visibility: hidden !important;
           }
-          
-          /* If nested, we need to make sure parents are visible but siblings are hidden */
-          /* We'll use a safer approach: Hide all children of body, then show the root and the specific modal */
-          body > *:not(#root) { display: none !important; }
-          #root > *:not(.invoice-modal-container) { display: none !important; }
 
-          .invoice-modal-container {
-            position: static !important;
-            padding: 0 !important;
-            margin: 0 !important;
-            background: white !important;
-            display: block !important;
-            overflow: visible !important;
+          .invoice-modal-wrapper, 
+          .invoice-modal-wrapper * {
+            visibility: visible !important;
+          }
+
+          .invoice-modal-wrapper {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
             width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            display: block !important;
+            background: white !important;
+            z-index: 999999 !important;
           }
 
-          /* Hide modal toolbar and backdrop effects */
-          .print\\:hidden, .backdrop-blur-md, .bg-slate-900\\/80 {
+          /* Masquer la barre d'outils et le fond assombri */
+          .print\\:hidden, .bg-slate-900\\/80, .backdrop-blur-md {
             display: none !important;
-            background: none !important;
-            backdrop-filter: none !important;
+            visibility: hidden !important;
           }
 
           .printable-container {
+            width: 210mm !important;
             margin: 0 !important;
             padding: 0 !important;
-            width: 210mm !important;
             display: block !important;
           }
 
           .printable-sheet {
-            margin: 0 !important;
-            box-shadow: none !important;
-            border: none !important;
             width: 210mm !important;
             height: 297mm !important;
+            min-height: 297mm !important;
+            margin: 0 !important;
+            padding: 10mm !important;
+            box-sizing: border-box !important;
             page-break-after: always !important;
             display: flex !important;
             flex-direction: column !important;
             background: white !important;
+            box-shadow: none !important;
+            border: none !important;
             position: relative !important;
           }
 
-          /* Ensure images and logos are visible */
+          /* Fixer les images (logo/signature) */
           img {
             max-width: 100% !important;
             display: block !important;
+            opacity: 1 !important;
           }
         }
       `}} />

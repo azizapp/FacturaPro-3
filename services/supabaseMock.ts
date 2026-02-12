@@ -6,8 +6,8 @@ export const db = {
   // --- Company Settings ---
   getCompanySettings: async (): Promise<Company | null> => {
     const { data, error } = await supabase
-      .from('company_settings')
-      .select('id, name, address, email, phone, siret, logo, city, country, footer, signature, icons, remarques, invoice_prefix, invoice_start_number')
+      .from('Factur_settings')
+      .select('id, name, siret, address, country, city, email, phone, logo, icons, footer, signature, remarques, invoice_prefix, invoice_start_number')
       .limit(1)
       .maybeSingle();
 
@@ -18,18 +18,48 @@ export const db = {
   updateCompanySettings: async (company: Company): Promise<void> => {
     const { id, ...updates } = company;
     
-    const { data } = await supabase.from('company_settings').select('id').limit(1).maybeSingle();
+    const { data } = await supabase.from('Factur_settings').select('id').limit(1).maybeSingle();
     
     if (data) {
       const { error } = await supabase
-        .from('company_settings')
-        .update(updates)
+        .from('Factur_settings')
+        .update({
+            name: updates.name,
+            siret: updates.siret,
+            address: updates.address,
+            country: updates.country,
+            city: updates.city,
+            email: updates.email,
+            phone: updates.phone,
+            logo: updates.logo,
+            icons: updates.icons,
+            footer: updates.footer,
+            signature: updates.signature,
+            remarques: updates.remarques,
+            invoice_prefix: updates.invoice_prefix,
+            invoice_start_number: updates.invoice_start_number
+        })
         .eq('id', data.id);
       if (error) throw error;
     } else {
       const { error } = await supabase
-        .from('company_settings')
-        .insert([updates]);
+        .from('Factur_settings')
+        .insert([{
+            name: updates.name,
+            siret: updates.siret,
+            address: updates.address,
+            country: updates.country,
+            city: updates.city,
+            email: updates.email,
+            phone: updates.phone,
+            logo: updates.logo,
+            icons: updates.icons,
+            footer: updates.footer,
+            signature: updates.signature,
+            remarques: updates.remarques,
+            invoice_prefix: updates.invoice_prefix,
+            invoice_start_number: updates.invoice_start_number
+        }]);
       if (error) throw error;
     }
   },
@@ -160,7 +190,7 @@ export const db = {
         productName: item.product_name,
         quantity: parseFloat(item.quantity),
         price: parseFloat(item.price),
-        tvaRate: parseFloat(item.tva_rate),
+        tva_rate: parseFloat(item.tva_rate),
         discount: parseFloat(item.discount)
       })),
       payments: (inv.payments || []).map((p: any) => ({
@@ -200,11 +230,9 @@ export const db = {
     const itemsToInsert = invoice.items.map(item => ({
       invoice_id: invData.id,
       product_id: item.productId,
-      // Fix: item.product_name -> item.productName
       product_name: item.productName,
       quantity: item.quantity,
       price: item.price,
-      // Fix: item.tva_rate -> item.tvaRate
       tva_rate: item.tvaRate,
       discount: item.discount
     }));
@@ -228,11 +256,8 @@ export const db = {
         notes: invoice.notes,
         subtotal: invoice.subtotal,
         tva_total: invoice.tvaTotal,
-        // Fix: invoice.discount_amount -> invoice.discountAmount
         discount_amount: invoice.discountAmount || 0,
-        // Fix: invoice.adjustment_amount -> invoice.adjustmentAmount
         adjustment_amount: invoice.adjustmentAmount || 0,
-        // Fix: invoice.grand_total -> invoice.grandTotal
         grand_total: invoice.grandTotal
       })
       .eq('id', invoice.id);
@@ -243,11 +268,9 @@ export const db = {
     const itemsToInsert = invoice.items.map(item => ({
       invoice_id: invoice.id,
       product_id: item.productId,
-      // Fix: item.product_name -> item.productName
       product_name: item.productName,
       quantity: item.quantity,
       price: item.price,
-      // Fix: item.tva_rate -> item.tvaRate
       tva_rate: item.tvaRate,
       discount: item.discount
     }));
@@ -273,7 +296,6 @@ export const db = {
         amount: payment.amount,
         date: payment.date,
         method: payment.method,
-        // Fix: payment.check_image -> payment.checkImage
         check_image: payment.checkImage,
         note: payment.note
       }]);
@@ -305,7 +327,7 @@ export const db = {
     } else if (totalPaid > 0) {
       newStatus = InvoiceStatus.PARTIAL;
     } else {
-      newStatus = InvoiceStatus.DRAFT; // أو SENT حسب سياسة العمل
+      newStatus = InvoiceStatus.DRAFT; 
     }
 
     await supabase.from('invoices').update({ status: newStatus }).eq('id', invoiceId);

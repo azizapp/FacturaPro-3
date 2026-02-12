@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Invoice, Client, InvoiceStatus } from '../types';
 
 interface InvoiceTableProps {
@@ -31,7 +31,17 @@ const InvoiceTable: React.FC<InvoiceTableProps> = ({
   const [dateFilter, setDateFilter] = useState<string>('');
   const [dateFrom, setDateFrom] = useState<string>('');
   const [dateTo, setDateTo] = useState<string>('');
-  const [showFilters, setShowFilters] = useState(true);
+  const [showFilters, setShowFilters] = useState(false);
+  
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const pageSizeOptions = [10, 20, 30, 50, 100, 200];
+
+  const getClientName = (clientId: string) => {
+    const client = clients.find(c => c.id === clientId);
+    return client ? client.name : 'Client inconnu';
+  };
 
   const getDateRange = (filter: string) => {
     const today = new Date();
@@ -41,49 +51,27 @@ const InvoiceTable: React.FC<InvoiceTableProps> = ({
     end.setHours(23, 59, 59, 999);
 
     switch (filter) {
-      case 'today':
-        break;
+      case 'today': break;
       case 'week':
         start.setDate(today.getDate() - today.getDay());
         end.setDate(today.getDate() + (6 - today.getDay()));
-        end.setHours(23, 59, 59, 999);
-        break;
-      case 'lastWeek':
-        start.setDate(today.getDate() - today.getDay() - 7);
-        end.setDate(today.getDate() - today.getDay() - 1);
-        end.setHours(23, 59, 59, 999);
         break;
       case 'month':
         start.setDate(1);
         end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-        end.setHours(23, 59, 59, 999);
-        break;
-      case 'lastMonth':
-        start = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-        end = new Date(today.getFullYear(), today.getMonth(), 0);
-        end.setHours(23, 59, 59, 999);
         break;
       case 'year':
         start = new Date(today.getFullYear(), 0, 1);
         end = new Date(today.getFullYear(), 11, 31);
-        end.setHours(23, 59, 59, 999);
         break;
-      default:
-        return null;
+      default: return null;
     }
-
     return { start, end };
-  };
-
-  const getClientName = (clientId: string) => {
-    const client = clients.find(c => c.id === clientId);
-    return client ? client.name : 'Client inconnu';
   };
 
   const filteredAndSortedInvoices = useMemo(() => {
     let filtered = [...invoices];
 
-    // Filter by search term (name or invoice number)
     if (searchTerm.trim()) {
       const term = searchTerm.toLowerCase();
       filtered = filtered.filter(inv => {
@@ -93,14 +81,11 @@ const InvoiceTable: React.FC<InvoiceTableProps> = ({
       });
     }
 
-    // Filter by status
     if (selectedStatus) {
       filtered = filtered.filter(inv => inv.status === selectedStatus);
     }
 
-    // Filter by date range
     if (dateFilter && dateFilter !== 'custom') {
-      // Fix: Use 'dateFilter' state variable instead of undefined 'filter'
       const range = getDateRange(dateFilter);
       if (range) {
         filtered = filtered.filter(inv => {
@@ -109,10 +94,7 @@ const InvoiceTable: React.FC<InvoiceTableProps> = ({
         });
       }
     } else if (dateFilter === 'custom') {
-      if (dateFrom) {
-        const fromDate = new Date(dateFrom);
-        filtered = filtered.filter(inv => new Date(inv.date) >= fromDate);
-      }
+      if (dateFrom) filtered = filtered.filter(inv => new Date(inv.date) >= new Date(dateFrom));
       if (dateTo) {
         const toDate = new Date(dateTo);
         toDate.setHours(23, 59, 59, 999);
@@ -120,41 +102,33 @@ const InvoiceTable: React.FC<InvoiceTableProps> = ({
       }
     }
 
-    // Sort
     return filtered.sort((a, b) => {
-      let aValue: string | number | Date = '';
-      let bValue: string | number | Date = '';
-
+      let aValue: any, bValue: any;
       switch (sortField) {
-        case 'date':
-          aValue = new Date(a.date);
-          bValue = new Date(b.date);
-          break;
-        case 'number':
-          aValue = a.number;
-          bValue = b.number;
-          break;
-        case 'client':
-          aValue = getClientName(a.clientId).toLowerCase();
-          bValue = getClientName(b.clientId).toLowerCase();
-          break;
-        case 'status':
-          aValue = a.status.toLowerCase();
-          bValue = b.status.toLowerCase();
-          break;
-        case 'total':
-          aValue = a.grandTotal;
-          bValue = b.grandTotal;
-          break;
-        default:
-          return 0;
+        case 'date': aValue = new Date(a.date); bValue = new Date(b.date); break;
+        case 'number': aValue = a.number; bValue = b.number; break;
+        case 'client': aValue = getClientName(a.clientId).toLowerCase(); bValue = getClientName(b.clientId).toLowerCase(); break;
+        case 'status': aValue = a.status.toLowerCase(); bValue = b.status.toLowerCase(); break;
+        case 'total': aValue = a.grandTotal; bValue = b.grandTotal; break;
+        default: return 0;
       }
-
       if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
       if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
       return 0;
     });
   }, [invoices, sortField, sortDirection, clients, selectedStatus, searchTerm, dateFilter, dateFrom, dateTo]);
+
+  // Reset pagination when filters or page size change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedStatus, dateFilter, dateFrom, dateTo, sortField, itemsPerPage]);
+
+  // Paginated Data
+  const totalPages = Math.ceil(filteredAndSortedInvoices.length / itemsPerPage);
+  const paginatedInvoices = filteredAndSortedInvoices.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -165,277 +139,290 @@ const InvoiceTable: React.FC<InvoiceTableProps> = ({
     }
   };
 
-  const resetFilters = () => {
-    setSearchTerm('');
-    setSelectedStatus('');
-    setDateFilter('');
-    setDateFrom('');
-    setDateTo('');
-  };
-
-  const hasActiveFilters = searchTerm || selectedStatus || dateFilter;
-
-  const getSortIcon = (field: SortField) => {
-    if (sortField !== field) return null;
-    return sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down';
-  };
-
   const getStatusStyle = (status: string) => {
     const s = status.toLowerCase();
-    if (s.includes('brouillon') || s === 'draft') {
-      return { 
-        color: '#F54927', 
-        backgroundColor: 'rgba(245, 73, 39, 0.1)',
-        border: '1px solid rgba(245, 73, 39, 0.2)'
-      };
-    }
-    if (s.includes('partielle') || s === 'partial') {
-      return { 
-        color: '#EAB308', 
-        backgroundColor: 'rgba(234, 179, 8, 0.15)',
-        border: '1px solid rgba(234, 179, 8, 0.3)'
-      };
-    }
-    if (s.includes('payée') || s === 'paid') {
-      return { 
-        color: '#10B981', 
-        backgroundColor: 'rgba(16, 185, 129, 0.1)',
-        border: '1px solid rgba(16, 185, 129, 0.2)'
-      };
-    }
-    return { 
-      color: '#64748b', 
-      backgroundColor: 'rgba(100, 116, 139, 0.1)',
-      border: '1px solid rgba(100, 116, 139, 0.2)'
-    };
+    if (s.includes('brouillon')) return { color: '#F54927', backgroundColor: 'rgba(245, 73, 39, 0.1)', border: '1px solid rgba(245, 73, 39, 0.2)' };
+    if (s.includes('partielle')) return { color: '#EAB308', backgroundColor: 'rgba(234, 179, 8, 0.1)', border: '1px solid rgba(234, 179, 8, 0.2)' };
+    if (s.includes('payée')) return { color: '#10B981', backgroundColor: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.2)' };
+    return { color: '#64748b', backgroundColor: 'rgba(100, 116, 139, 0.1)', border: '1px solid rgba(100, 116, 139, 0.2)' };
   };
 
   return (
-    <div className="bg-white dark:bg-[#27354c] rounded-[15px] shadow-xl overflow-hidden border border-slate-100 dark:border-white/5 transition-colors duration-300 flex flex-col h-full">
-      {/* Filter Header */}
-      <div className="border-b border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-slate-900/20">
-        <div className="flex items-center justify-between p-4">
+    <div className="bg-white dark:bg-[#27354c] rounded-[20px] shadow-xl overflow-hidden border border-slate-200 dark:border-white/5 flex flex-col h-[calc(100vh-250px)] min-h-[500px]">
+      
+      {/* Search & Filters Toolbar */}
+      <div className="p-4 border-b border-slate-100 dark:border-white/5 bg-slate-50/30 dark:bg-slate-900/40 flex flex-wrap items-center justify-between gap-4 shrink-0">
+        <div className="relative flex-1 min-w-[280px]">
+          <i className="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Rechercher une facture ou un client..."
+            className="w-full pl-11 pr-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all dark:text-white"
+          />
+        </div>
+        
+        <div className="flex items-center space-x-2">
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center space-x-2 px-4 py-2 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-500/20 transition-colors text-sm font-medium"
+            className={`px-4 py-2.5 rounded-xl text-sm font-bold flex items-center space-x-2 transition-all ${
+              showFilters || selectedStatus || dateFilter 
+              ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' 
+              : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-white/10'
+            }`}
           >
-            <i className={`fas fa-filter text-xs transition-transform ${showFilters ? 'rotate-0' : ''}`}></i>
-            <span>Filtres {hasActiveFilters && `(${Object.values({searchTerm, selectedStatus, dateFilter}).filter(v => v).length})`}</span>
-            <i className={`fas fa-chevron-${showFilters ? 'up' : 'down'} text-xs transition-transform`}></i>
+            <i className="fas fa-filter text-xs"></i>
+            <span>Filtres</span>
           </button>
           
-          {hasActiveFilters && (
+          {(searchTerm || selectedStatus || dateFilter) && (
             <button
-              onClick={resetFilters}
-              className="px-3 py-2 text-xs font-medium text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg transition-colors"
+              onClick={() => { setSearchTerm(''); setSelectedStatus(''); setDateFilter(''); }}
+              className="p-2.5 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-xl transition-colors"
+              title="Réinitialiser"
             >
-              <i className="fas fa-redo mr-1"></i> Réinitialiser
+              <i className="fas fa-times-circle"></i>
             </button>
           )}
         </div>
-
-        {showFilters && (
-          <div className="px-4 pb-4 pt-2 space-y-4 border-t border-slate-200 dark:border-white/5">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
-              {/* Search Field */}
-              <div className="flex flex-col space-y-1.5">
-                <label className="text-xs font-bold uppercase text-slate-600 dark:text-slate-400">Recherche</label>
-                <div className="relative">
-                  <i className="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 text-xs"></i>
-                  <input
-                    type="text"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder="Nom du client ou numéro de facture..."
-                    className="w-full pl-8 pr-2 py-1.5 border border-slate-300 dark:border-slate-600 dark:bg-slate-800 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:text-white placeholder-slate-400 dark:placeholder-slate-500"
-                  />
-                </div>
-              </div>
-
-              {/* Status Dropdown */}
-              <div className="flex flex-col space-y-1.5">
-                <label className="text-xs font-bold uppercase text-slate-600 dark:text-slate-400">Statut</label>
-                <select
-                  value={selectedStatus}
-                  onChange={(e) => setSelectedStatus(e.target.value)}
-                  className="w-full px-2 py-1.5 border border-slate-300 dark:border-slate-600 dark:bg-slate-800 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:text-white"
-                >
-                  <option value="">Tous</option>
-                  {Object.values(InvoiceStatus).map(status => (
-                    <option key={status} value={status}>{status}</option>
-                  ))}
-                </select>
-              </div>
-
-              {dateFilter !== 'custom' ? (
-                /* Date Dropdown */
-                <div className="flex flex-col space-y-1.5">
-                  <label className="text-xs font-bold uppercase text-slate-600 dark:text-slate-400">Date</label>
-                  <select
-                    value={dateFilter}
-                    onChange={(e) => setDateFilter(e.target.value)}
-                    className="w-full px-2 py-1.5 border border-slate-300 dark:border-slate-600 dark:bg-slate-800 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:text-white"
-                  >
-                    <option value="">Tous</option>
-                    <option value="today">Aujourd'hui</option>
-                    <option value="week">Cette semaine</option>
-                    <option value="lastWeek">Semaine dernière</option>
-                    <option value="month">Ce mois</option>
-                    <option value="lastMonth">Mois dernier</option>
-                    <option value="year">Cette année</option>
-                    <option value="custom">Entre deux dates</option>
-                  </select>
-                </div>
-              ) : (
-                /* Date From */
-                <div className="flex flex-col space-y-1.5">
-                  <label className="text-xs font-bold uppercase text-slate-600 dark:text-slate-400">Du</label>
-                  <input
-                    type="date"
-                    value={dateFrom}
-                    onChange={(e) => setDateFrom(e.target.value)}
-                    className="w-full px-2 py-1.5 border border-slate-300 dark:border-slate-600 dark:bg-slate-800 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:text-white"
-                  />
-                </div>
-              )}
-
-              {dateFilter === 'custom' && (
-                /* Date To */
-                <div className="flex flex-col space-y-1.5">
-                  <label className="text-xs font-bold uppercase text-slate-600 dark:text-slate-400">Au</label>
-                  <input
-                    type="date"
-                    value={dateTo}
-                    onChange={(e) => setDateTo(e.target.value)}
-                    className="w-full px-2 py-1.5 border border-slate-300 dark:border-slate-600 dark:bg-slate-800 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:text-white"
-                  />
-                </div>
-              )}
-            </div>
-          </div>
-        )}
       </div>
 
-      {/* Results Count */}
-      {hasActiveFilters && (
-        <div className="px-4 py-2 bg-indigo-50 dark:bg-indigo-500/10 border-b border-slate-200 dark:border-white/5 text-xs text-indigo-600 dark:text-indigo-400">
-          <i className="fas fa-info-circle mr-2"></i>
-          {filteredAndSortedInvoices.length} facture{filteredAndSortedInvoices.length !== 1 ? 's' : ''} correspond{filteredAndSortedInvoices.length !== 1 ? 'ent' : ''} aux critères
+      {/* Advanced Filters Overlay */}
+      {showFilters && (
+        <div className="p-4 bg-white dark:bg-slate-800 border-b border-slate-100 dark:border-white/5 grid grid-cols-1 md:grid-cols-3 gap-4 animate-in slide-in-from-top-2 duration-200 shrink-0">
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Statut</label>
+            <select
+              value={selectedStatus}
+              onChange={(e) => setSelectedStatus(e.target.value)}
+              className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-white/5 rounded-lg text-xs font-bold outline-none dark:text-white"
+            >
+              <option value="">Tous les statuts</option>
+              {Object.values(InvoiceStatus).map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Période</label>
+            <select
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value)}
+              className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-white/5 rounded-lg text-xs font-bold outline-none dark:text-white"
+            >
+              <option value="">Toutes les dates</option>
+              <option value="today">Aujourd'hui</option>
+              <option value="week">Cette semaine</option>
+              <option value="month">Ce mois</option>
+              <option value="year">Cette année</option>
+              <option value="custom">Personnalisé...</option>
+            </select>
+          </div>
+          {dateFilter === 'custom' && (
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Du</label>
+                <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="w-full px-2 py-2 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-white/5 rounded-lg text-[10px] font-bold dark:text-white" />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Au</label>
+                <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="w-full px-2 py-2 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-white/5 rounded-lg text-[10px] font-bold dark:text-white" />
+              </div>
+            </div>
+          )}
         </div>
       )}
 
-      {/* Table */}
-      <div className="flex-1 overflow-x-auto">
-        <table className="w-full">
-          <thead className="bg-slate-50 dark:bg-slate-900/50 sticky top-0">
+      {/* Table Container with Internal Scroll */}
+      <div className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar relative">
+        <table className="w-full text-left border-collapse table-fixed">
+          <thead className="sticky top-0 z-30 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-white/10 shadow-sm">
             <tr>
-              <th className="px-6 py-5 text-[10px] font-bold uppercase text-slate-400 text-center">
-                <div className="flex items-center justify-center space-x-1 cursor-pointer" onClick={() => handleSort('date')}>
+              <th className="w-32 px-6 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest cursor-pointer group" onClick={() => handleSort('date')}>
+                <div className="flex items-center space-x-2">
                   <span>Date</span>
-                  <i className={`fas ${sortField === 'date' ? (sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'} text-slate-300 dark:text-slate-600 text-xs`}></i>
+                  <i className={`fas ${sortField === 'date' ? (sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort opacity-0 group-hover:opacity-40'} transition-opacity`}></i>
                 </div>
               </th>
-              <th className="px-6 py-5 text-[10px] font-bold uppercase text-slate-400">
-                <div className="flex items-center space-x-1 cursor-pointer" onClick={() => handleSort('number')}>
+              <th className="w-36 px-6 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest cursor-pointer group" onClick={() => handleSort('number')}>
+                <div className="flex items-center space-x-2">
                   <span>Numéro</span>
-                  <i className={`fas ${sortField === 'number' ? (sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'} text-slate-300 dark:text-slate-600 text-xs`}></i>
+                  <i className={`fas ${sortField === 'number' ? (sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort opacity-0 group-hover:opacity-40'} transition-opacity`}></i>
                 </div>
               </th>
-              <th className="px-6 py-5 text-[10px] font-bold uppercase text-slate-400">
-                <div className="flex items-center space-x-1 cursor-pointer" onClick={() => handleSort('client')}>
+              <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest cursor-pointer group" onClick={() => handleSort('client')}>
+                <div className="flex items-center space-x-2">
                   <span>Client</span>
-                  <i className={`fas ${sortField === 'client' ? (sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'} text-slate-300 dark:text-slate-600 text-xs`}></i>
+                  <i className={`fas ${sortField === 'client' ? (sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort opacity-0 group-hover:opacity-40'} transition-opacity`}></i>
                 </div>
               </th>
-              <th className="px-6 py-5 text-[10px] font-bold uppercase text-slate-400">
-                <div className="flex items-center space-x-1 cursor-pointer" onClick={() => handleSort('status')}>
+              <th className="w-36 px-6 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest cursor-pointer group" onClick={() => handleSort('status')}>
+                <div className="flex items-center space-x-2">
                   <span>Statut</span>
-                  <i className={`fas ${sortField === 'status' ? (sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'} text-slate-300 dark:text-slate-600 text-xs`}></i>
+                  <i className={`fas ${sortField === 'status' ? (sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort opacity-0 group-hover:opacity-40'} transition-opacity`}></i>
                 </div>
               </th>
-              <th className="px-6 py-5 text-[10px] font-bold uppercase text-slate-400 text-right">
-                <div className="flex items-center justify-end space-x-1 cursor-pointer" onClick={() => handleSort('total')}>
+              <th className="w-40 px-6 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest text-right cursor-pointer group" onClick={() => handleSort('total')}>
+                <div className="flex items-center justify-end space-x-2">
                   <span>Total TTC</span>
-                  <i className={`fas ${sortField === 'total' ? (sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'} text-slate-300 dark:text-slate-600 text-xs`}></i>
+                  <i className={`fas ${sortField === 'total' ? (sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort opacity-0 group-hover:opacity-40'} transition-opacity`}></i>
                 </div>
               </th>
-              <th className="px-6 py-5 text-[10px] font-bold uppercase text-slate-400 text-center">Paiements</th>
-              <th className="px-6 py-5 text-[10px] font-bold uppercase text-slate-400 text-center">Actions</th>
+              <th className="w-44 px-6 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest text-center">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-50 dark:divide-white/5">
-            {filteredAndSortedInvoices.length > 0 ? (
-              filteredAndSortedInvoices.map((invoice) => (
-                <tr key={invoice.id} className="hover:bg-slate-50/30 dark:hover:bg-white/5 transition-colors">
-                  <td className="px-6 py-4 text-slate-500 dark:text-slate-400 text-xs text-center">{new Date(invoice.date).toLocaleDateString('fr-FR')}</td>
-                  <td className="px-6 py-4">
-                    <span className="font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 px-2 py-1 rounded-[6px] text-xs">
-                      {invoice.number}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-[11px] font-bold text-slate-700 dark:text-slate-200">{getClientName(invoice.clientId)}</td>
-                  <td className="px-6 py-4">
-                    <span 
-                      className="text-[9px] font-black uppercase px-2.5 py-1 rounded-[8px] inline-block shadow-sm"
-                      style={getStatusStyle(invoice.status)}
-                    >
-                      {invoice.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right font-bold text-slate-800 dark:text-white text-xs">{invoice.grandTotal.toLocaleString('fr-FR')}</td>
-                  <td className="px-6 py-4 text-center">
+          <tbody className="divide-y divide-slate-100 dark:divide-white/5">
+            {paginatedInvoices.length > 0 ? paginatedInvoices.map((invoice) => (
+              <tr key={invoice.id} className="hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors group">
+                <td className="px-6 py-4 text-xs font-medium text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                  {new Date(invoice.date).toLocaleDateString('fr-FR')}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <span className="text-[11px] font-black text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 px-2.5 py-1.5 rounded-lg border border-indigo-100 dark:border-indigo-500/10">
+                    {invoice.number}
+                  </span>
+                </td>
+                <td className="px-6 py-4">
+                  <p className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase truncate">
+                    {getClientName(invoice.clientId)}
+                  </p>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <span 
+                    className="text-[9px] font-black uppercase px-2.5 py-1.5 rounded-full inline-block text-center min-w-[80px]"
+                    style={getStatusStyle(invoice.status)}
+                  >
+                    {invoice.status}
+                  </span>
+                </td>
+                <td className="px-6 py-4 text-right font-black text-slate-800 dark:text-white text-xs whitespace-nowrap">
+                  {invoice.grandTotal.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} <span className="text-[9px] text-slate-400 font-bold ml-1 uppercase">MAD</span>
+                </td>
+                <td className="px-6 py-4">
+                  <div className="flex items-center justify-center space-x-1">
                     <button 
-                      onClick={() => onAddPayment(invoice.id)}
-                      className="w-8 h-8 rounded-[8px] text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-500/20 hover:text-emerald-600 transition-all"
-                      title="Ajouter un paiement"
+                      onClick={() => onViewInvoice(invoice.id)} 
+                      className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 hover:text-indigo-600 transition-all"
+                      title="Voir Détails"
+                    >
+                      <i className="far fa-eye text-xs"></i>
+                    </button>
+                    <button 
+                      onClick={() => onEditInvoice(invoice.id)} 
+                      className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 hover:text-blue-600 transition-all"
+                      title="Modifier la Facture"
+                    >
+                      <i className="fas fa-edit text-xs"></i>
+                    </button>
+                    <button 
+                      onClick={() => onAddPayment(invoice.id)} 
+                      className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 hover:text-emerald-600 transition-all"
+                      title="Encaisser"
                     >
                       <i className="fas fa-money-bill-wave text-xs"></i>
                     </button>
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    <div className="flex items-center justify-center space-x-1">
-                      <button 
-                        onClick={() => onViewInvoice(invoice.id)} 
-                        className="w-8 h-8 rounded-[8px] text-slate-400 hover:bg-indigo-50 dark:hover:bg-indigo-500/20 hover:text-indigo-600 transition-all"
-                        title="Voir détails"
-                      >
-                        <i className="far fa-eye text-xs"></i>
-                      </button>
-                      <button 
-                        onClick={() => onEditInvoice(invoice.id)} 
-                        className="w-8 h-8 rounded-[8px] text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-indigo-600 transition-all"
-                        title="Modifier"
-                      >
-                        <i className="fas fa-edit text-xs"></i>
-                      </button>
-                      <button 
-                        onClick={() => onPdfInvoice(invoice.id)} 
-                        className="w-8 h-8 rounded-[8px] text-slate-400 hover:bg-indigo-50 dark:hover:bg-indigo-500/20 hover:text-indigo-600 transition-all"
-                        title="Exporter PDF"
-                      >
-                        <i className="fas fa-file-pdf text-xs"></i>
-                      </button>
-                      <button 
-                        onClick={() => onDeleteInvoice(invoice.id)} 
-                        className="w-8 h-8 rounded-[8px] text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/20 hover:text-rose-600 transition-all"
-                        title="Supprimer"
-                      >
-                        <i className="fas fa-trash text-xs"></i>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            ) : (
+                    <button 
+                      onClick={() => onPdfInvoice(invoice.id)} 
+                      className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:bg-amber-50 dark:hover:bg-amber-500/10 hover:text-amber-600 transition-all"
+                      title="Exporter PDF"
+                    >
+                      <i className="fas fa-file-pdf text-xs"></i>
+                    </button>
+                    <button 
+                      onClick={() => onDeleteInvoice(invoice.id)} 
+                      className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 hover:text-rose-600 transition-all"
+                      title="Supprimer"
+                    >
+                      <i className="fas fa-trash-alt text-xs"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            )) : (
               <tr>
-                <td colSpan={7} className="px-6 py-8 text-center text-slate-500 dark:text-slate-400 text-sm">
-                  <i className="fas fa-inbox text-2xl mb-2 block opacity-50"></i>
-                  Aucune facture ne correspond à vos critères de filtre
+                <td colSpan={6} className="py-24 text-center text-slate-400 italic text-sm">
+                  <div className="flex flex-col items-center justify-center opacity-30">
+                    <i className="fas fa-folder-open text-5xl mb-4"></i>
+                    <p className="text-[10px] font-black uppercase tracking-widest">Aucune facture à afficher</p>
+                  </div>
                 </td>
               </tr>
             )}
           </tbody>
         </table>
+      </div>
+
+      {/* Pagination Footer */}
+      <div className="px-6 py-4 bg-slate-50 dark:bg-slate-900/60 border-t border-slate-100 dark:border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4 shrink-0">
+        <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-8">
+          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+            Affichage de <span className="text-slate-800 dark:text-slate-200">
+              {filteredAndSortedInvoices.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}
+            </span> à <span className="text-slate-800 dark:text-slate-200">
+              {Math.min(currentPage * itemsPerPage, filteredAndSortedInvoices.length)}
+            </span> sur <span className="text-indigo-600 dark:text-indigo-400 font-black">{filteredAndSortedInvoices.length}</span> documents
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <label className="text-[9px] font-black uppercase text-slate-400 tracking-tighter">Lignes par page:</label>
+            <select 
+              value={itemsPerPage}
+              onChange={(e) => setItemsPerPage(Number(e.target.value))}
+              className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-lg text-[10px] font-black px-2 py-1 outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all dark:text-white"
+            >
+              {pageSizeOptions.map(option => (
+                <option key={option} value={option}>{option}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {totalPages > 1 && (
+          <div className="flex items-center space-x-1">
+            <button
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              disabled={currentPage === 1}
+              className="w-10 h-10 rounded-xl flex items-center justify-center border border-slate-200 dark:border-white/10 text-slate-400 disabled:opacity-30 hover:bg-white dark:hover:bg-slate-800 transition-all active:scale-90"
+            >
+              <i className="fas fa-chevron-left text-[10px]"></i>
+            </button>
+            
+            <div className="flex items-center space-x-1">
+              {[...Array(totalPages)].map((_, i) => {
+                const page = i + 1;
+                if (
+                  page === 1 || 
+                  page === totalPages || 
+                  (page >= currentPage - 2 && page <= currentPage + 2)
+                ) {
+                  return (
+                    <button
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      className={`w-10 h-10 rounded-xl text-xs font-black transition-all active:scale-90 ${
+                        currentPage === page 
+                        ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' 
+                        : 'text-slate-500 hover:bg-white dark:hover:bg-slate-800 border border-transparent hover:border-slate-200 dark:hover:border-white/10'
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  );
+                } else if (page === currentPage - 3 || page === currentPage + 3) {
+                  return <span key={page} className="text-slate-300 dark:text-slate-700 text-xs px-1">...</span>;
+                }
+                return null;
+              })}
+            </div>
+
+            <button
+              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+              disabled={currentPage === totalPages}
+              className="w-10 h-10 rounded-xl flex items-center justify-center border border-slate-200 dark:border-white/10 text-slate-400 disabled:opacity-30 hover:bg-white dark:hover:bg-slate-800 transition-all active:scale-90"
+            >
+              <i className="fas fa-chevron-right text-[10px]"></i>
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
