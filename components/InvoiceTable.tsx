@@ -33,9 +33,9 @@ const InvoiceTable: React.FC<InvoiceTableProps> = ({
   const [dateTo, setDateTo] = useState<string>('');
   const [showFilters, setShowFilters] = useState(false);
   
-  // Pagination State
+  // Pagination State - Updated default items per page to 20
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [itemsPerPage, setItemsPerPage] = useState(20);
   const pageSizeOptions = [10, 20, 30, 50, 100, 200];
 
   const getClientName = (clientId: string) => {
@@ -233,41 +233,41 @@ const InvoiceTable: React.FC<InvoiceTableProps> = ({
       )}
 
       {/* Table Container with Internal Scroll */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar relative">
-        <table className="w-full text-left border-collapse table-fixed">
+      <div className="flex-1 overflow-auto custom-scrollbar relative">
+        <table className="w-full text-left border-collapse min-w-[900px]">
           <thead className="sticky top-0 z-30 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-white/10 shadow-sm">
             <tr>
-              <th className="w-32 px-6 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest cursor-pointer group" onClick={() => handleSort('date')}>
+              <th className="w-[12%] px-6 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest cursor-pointer group" onClick={() => handleSort('date')}>
                 <div className="flex items-center space-x-2">
                   <span>Date</span>
                   <i className={`fas ${sortField === 'date' ? (sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort opacity-0 group-hover:opacity-40'} transition-opacity`}></i>
                 </div>
               </th>
-              <th className="w-36 px-6 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest cursor-pointer group" onClick={() => handleSort('number')}>
+              <th className="w-[14%] px-6 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest cursor-pointer group" onClick={() => handleSort('number')}>
                 <div className="flex items-center space-x-2">
                   <span>Numéro</span>
                   <i className={`fas ${sortField === 'number' ? (sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort opacity-0 group-hover:opacity-40'} transition-opacity`}></i>
                 </div>
               </th>
-              <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest cursor-pointer group" onClick={() => handleSort('client')}>
+              <th className="w-[28%] px-6 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest cursor-pointer group" onClick={() => handleSort('client')}>
                 <div className="flex items-center space-x-2">
                   <span>Client</span>
                   <i className={`fas ${sortField === 'client' ? (sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort opacity-0 group-hover:opacity-40'} transition-opacity`}></i>
                 </div>
               </th>
-              <th className="w-36 px-6 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest cursor-pointer group" onClick={() => handleSort('status')}>
+              <th className="w-[12%] px-6 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest cursor-pointer group" onClick={() => handleSort('status')}>
                 <div className="flex items-center space-x-2">
                   <span>Statut</span>
                   <i className={`fas ${sortField === 'status' ? (sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort opacity-0 group-hover:opacity-40'} transition-opacity`}></i>
                 </div>
               </th>
-              <th className="w-40 px-6 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest text-right cursor-pointer group" onClick={() => handleSort('total')}>
+              <th className="w-[14%] px-6 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest text-right cursor-pointer group" onClick={() => handleSort('total')}>
                 <div className="flex items-center justify-end space-x-2">
                   <span>Total TTC</span>
                   <i className={`fas ${sortField === 'total' ? (sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort opacity-0 group-hover:opacity-40'} transition-opacity`}></i>
                 </div>
               </th>
-              <th className="w-44 px-6 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest text-center">Actions</th>
+              <th className="w-[20%] px-6 py-4 text-[10px] font-black uppercase text-slate-400 tracking-widest text-center">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-white/5">
@@ -282,7 +282,7 @@ const InvoiceTable: React.FC<InvoiceTableProps> = ({
                   </span>
                 </td>
                 <td className="px-6 py-4">
-                  <p className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase truncate">
+                  <p className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase truncate max-w-[250px]" title={getClientName(invoice.clientId)}>
                     {getClientName(invoice.clientId)}
                   </p>
                 </td>
@@ -354,7 +354,7 @@ const InvoiceTable: React.FC<InvoiceTableProps> = ({
       {/* Pagination Footer */}
       <div className="px-6 py-4 bg-slate-50 dark:bg-slate-900/60 border-t border-slate-100 dark:border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4 shrink-0">
         <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-8">
-          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap">
             Affichage de <span className="text-slate-800 dark:text-slate-200">
               {filteredAndSortedInvoices.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}
             </span> à <span className="text-slate-800 dark:text-slate-200">
@@ -363,11 +363,11 @@ const InvoiceTable: React.FC<InvoiceTableProps> = ({
           </div>
 
           <div className="flex items-center space-x-2">
-            <label className="text-[9px] font-black uppercase text-slate-400 tracking-tighter">Lignes par page:</label>
+            <label className="text-[9px] font-black uppercase text-slate-400 tracking-tighter whitespace-nowrap">Lignes par page:</label>
             <select 
               value={itemsPerPage}
               onChange={(e) => setItemsPerPage(Number(e.target.value))}
-              className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-lg text-[10px] font-black px-2 py-1 outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all dark:text-white"
+              className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-lg text-[10px] font-black px-2 py-1 outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all dark:text-white cursor-pointer"
             >
               {pageSizeOptions.map(option => (
                 <option key={option} value={option}>{option}</option>
@@ -386,7 +386,7 @@ const InvoiceTable: React.FC<InvoiceTableProps> = ({
               <i className="fas fa-chevron-left text-[10px]"></i>
             </button>
             
-            <div className="flex items-center space-x-1">
+            <div className="flex items-center space-x-1 overflow-x-auto no-scrollbar max-w-[200px] sm:max-w-none">
               {[...Array(totalPages)].map((_, i) => {
                 const page = i + 1;
                 if (
@@ -398,7 +398,7 @@ const InvoiceTable: React.FC<InvoiceTableProps> = ({
                     <button
                       key={page}
                       onClick={() => setCurrentPage(page)}
-                      className={`w-10 h-10 rounded-xl text-xs font-black transition-all active:scale-90 ${
+                      className={`w-10 h-10 rounded-xl text-xs font-black transition-all active:scale-90 shrink-0 ${
                         currentPage === page 
                         ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' 
                         : 'text-slate-500 hover:bg-white dark:hover:bg-slate-800 border border-transparent hover:border-slate-200 dark:hover:border-white/10'

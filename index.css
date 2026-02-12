@@ -20,10 +20,10 @@
   }
 }
 
-/* Custom Scrollbars */
+/* Custom Scrollbars - Blue Color Style */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
@@ -31,15 +31,24 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-slate-300 rounded-full transition-colors;
+  @apply bg-blue-500/50 rounded-full transition-colors border-2 border-transparent bg-clip-padding;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  @apply bg-slate-400;
+  @apply bg-blue-600;
 }
 
 .dark ::-webkit-scrollbar-thumb {
-  @apply bg-slate-800;
+  @apply bg-blue-400/30;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  @apply bg-blue-400/50;
+}
+
+/* Custom Scrollbar class for containers */
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  @apply bg-blue-500/40;
 }
 
 /* Animation Utilities */
@@ -63,11 +72,11 @@
 
 /* Table refinements */
 .table-modern thead th {
-  @apply py-5 px-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 border-b border-slate-100 dark:border-white/5;
+  @apply py-4 px-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 border-b border-slate-100 dark:border-white/5;
 }
 
 .table-modern tbody td {
-  @apply py-4 px-6 text-sm font-medium border-b border-slate-50 dark:border-white/5;
+  @apply py-4 px-6 text-xs font-medium border-b border-slate-50 dark:border-white/5;
 }
 
 /* Button glow effect */
