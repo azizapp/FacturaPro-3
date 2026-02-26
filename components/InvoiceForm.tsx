@@ -180,7 +180,22 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ clients, products, company, i
 
           <div><label className="text-[10px] font-bold text-slate-400 uppercase mb-2 block">Date</label><input type="date" value={invoiceDate} onChange={(e) => setInvoiceDate(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-white/5 rounded-[8px] px-4 py-3 text-xs font-bold dark:text-white" /></div>
           <div><label className="text-[10px] font-bold text-slate-400 uppercase mb-2 block">Échéance</label><input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-white/5 rounded-[8px] px-4 py-3 text-xs font-bold dark:text-white" /></div>
-          <div><label className="text-[10px] font-bold text-slate-400 uppercase mb-2 block">BC</label><input type="text" value={poNumber} onChange={(e) => setPoNumber(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-white/5 rounded-[8px] px-4 py-3 text-xs font-bold dark:text-white" placeholder="N° Commande" /></div>
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-[10px] font-bold text-slate-400 uppercase">BC</label>
+              {onAddClient && (
+                <button
+                  type="button"
+                  onClick={onAddClient}
+                  className="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center hover:bg-indigo-700 transition-colors"
+                  title="Nouveau Compte Client"
+                >
+                  <i className="fas fa-plus text-[10px]"></i>
+                </button>
+              )}
+            </div>
+            <input type="text" value={poNumber} onChange={(e) => setPoNumber(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-white/5 rounded-[8px] px-4 py-3 text-xs font-bold dark:text-white" placeholder="N° Commande" />
+          </div>
         </div>
 
         <div className="space-y-4 mb-12">
