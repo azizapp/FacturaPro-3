@@ -13,8 +13,66 @@ const InvoicePDFPreview: React.FC<InvoicePDFPreviewProps> = ({ invoices, company
   const [isDownloading, setIsDownloading] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
 
-  const handlePrint = () => {
-    window.print();
+  const handlePrint = async () => {
+    const element = document.querySelector('.printable-container');
+    if (!element) return;
+    setIsDownloading(true);
+
+    const filename = invoices.length === 1 ? `Facture_${invoices[0].number}.pdf` : `Export_Factures_${new Date().getTime()}.pdf`;
+    const opt = {
+      margin: 0,
+      filename: filename,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, letterRendering: true, logging: false },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      pagebreak: { mode: 'avoid-all', avoid: ['.printable-sheet'] }
+    };
+
+    try {
+      // @ts-ignore
+      const pdfBlob = await html2pdf()
+        .from(element)
+        .set(opt)
+        .toPdf()
+        .get('pdf')
+        .then((pdf: any) => {
+          const totalPages = pdf.internal.getNumberOfPages();
+          for (let i = totalPages; i > invoices.length; i--) {
+            pdf.deletePage(i);
+          }
+          return pdf.output('bloburl');
+        });
+
+      // Open the generated PDF in a hidden iframe and print silently
+      const iframe = document.createElement('iframe');
+      iframe.style.position = 'fixed';
+      iframe.style.right = '0';
+      iframe.style.bottom = '0';
+      iframe.style.width = '0';
+      iframe.style.height = '0';
+      iframe.style.border = 'none';
+      iframe.src = pdfBlob;
+
+      iframe.onload = () => {
+        setIsDownloading(false);
+        setTimeout(() => {
+          if (iframe.contentWindow) {
+            iframe.contentWindow.onbeforeunload = () => null;
+            iframe.contentWindow.onafterprint = () => {
+              setTimeout(() => document.body.removeChild(iframe), 500);
+            };
+            iframe.contentWindow.focus();
+            iframe.contentWindow.print();
+          }
+        }, 300);
+      };
+
+      document.body.appendChild(iframe);
+
+    } catch (error) {
+      console.error("Erreur Impression PDF:", error);
+      setIsDownloading(false);
+    }
   };
 
   const handleWhatsApp = async () => {
@@ -31,11 +89,23 @@ const InvoicePDFPreview: React.FC<InvoicePDFPreviewProps> = ({ invoices, company
       filename: filename,
       image: { type: 'jpeg', quality: 0.98 },
       html2canvas: { scale: 2, useCORS: true, letterRendering: true, logging: false },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      pagebreak: { mode: 'avoid-all', avoid: ['.printable-sheet'] }
     };
     try {
       // @ts-ignore
-      const pdfBlob = await html2pdf().from(element).set(opt).output('blob');
+      const pdfBlob = await html2pdf()
+        .from(element)
+        .set(opt)
+        .toPdf()
+        .get('pdf')
+        .then((pdf: any) => {
+          const totalPages = pdf.internal.getNumberOfPages();
+          for (let i = totalPages; i > invoices.length; i--) {
+            pdf.deletePage(i);
+          }
+          return pdf.output('blob');
+        });
       if (navigator.canShare && navigator.canShare({ files: [new File([pdfBlob], filename, { type: 'application/pdf' })] })) {
         const file = new File([pdfBlob], filename, { type: 'application/pdf' });
         await navigator.share({
@@ -68,11 +138,24 @@ const InvoicePDFPreview: React.FC<InvoicePDFPreviewProps> = ({ invoices, company
       filename: filename,
       image: { type: 'jpeg', quality: 0.98 },
       html2canvas: { scale: 2, useCORS: true, letterRendering: true, logging: false },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      pagebreak: { mode: 'avoid-all', avoid: ['.printable-sheet'] }
     };
     try {
       // @ts-ignore
-      await html2pdf().from(element).set(opt).save();
+      await html2pdf()
+        .from(element)
+        .set(opt)
+        .toPdf()
+        .get('pdf')
+        .then((pdf: any) => {
+          // Remove any extra blank pages beyond expected count
+          const totalPages = pdf.internal.getNumberOfPages();
+          for (let i = totalPages; i > invoices.length; i--) {
+            pdf.deletePage(i);
+          }
+        })
+        .save();
     } catch (error) {
       console.error("Erreur PDF:", error);
     } finally {
@@ -82,7 +165,7 @@ const InvoicePDFPreview: React.FC<InvoicePDFPreviewProps> = ({ invoices, company
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md overflow-hidden print:overflow-visible font-sans text-slate-900 invoice-modal-wrapper">
-      <div className="bg-white w-full max-w-6xl h-[95vh] rounded-[15px] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 print:h-auto print:w-full print:shadow-none print:rounded-none print:static print:block relative">
+      <div className="bg-white w-full max-w-6xl h-[95vh] rounded-[15px] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 print:h-auto print:w-full print:shadow-none print:rounded-none print:static print:block print:overflow-visible relative">
 
         {/* Barre d'outils */}
         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-white shrink-0 print:hidden relative z-20">
@@ -125,7 +208,7 @@ const InvoicePDFPreview: React.FC<InvoicePDFPreviewProps> = ({ invoices, company
                 <div
                   key={invoice.id}
                   className={`printable-sheet mx-auto bg-white p-[10mm] shadow-xl print:shadow-none print:p-[10mm] print:m-0 w-[210mm] h-[297mm] flex flex-col relative overflow-hidden ${index < invoices.length - 1 ? 'mb-8' : ''}`}
-                  style={{ pageBreakAfter: 'always', boxSizing: 'border-box' }}
+                  style={{ pageBreakAfter: index < invoices.length - 1 ? 'always' : 'avoid', boxSizing: 'border-box' }}
                 >
 
                   {/* Filigrane discret */}
@@ -248,7 +331,7 @@ const InvoicePDFPreview: React.FC<InvoicePDFPreviewProps> = ({ invoices, company
                     <div className="flex-1"></div>
 
                     {/* Footer */}
-                    <div className="mt-auto pt-4 border-t-2 border-slate-200 text-center space-y-2 bg-white pb-4">
+                    <div className="mt-auto pt-4 pb-3 mb-2 border-t-2 border-slate-200 text-center space-y-2 bg-white">
                       <div className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em]">
                         {company.footer || "Propulsé par FacturaPro - www.facturapro.ma"}
                       </div>

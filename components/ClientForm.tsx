@@ -24,16 +24,13 @@ const ClientForm: React.FC<ClientFormProps> = ({ initialClient, onSubmit, onCanc
     return {
       id: crypto.randomUUID(),
       name: '',
-      manager: '',
       location: '',
       city: '',
-      region: '',
       address: '',
       gsm1: '',
       gsm2: '',
       phone: '',
       email: '',
-      gamme: '',
       user_email: localStorage.getItem('user_email_preference') || companyEmail || '',
       is_blocked: false,
       balance: 0,
@@ -103,33 +100,14 @@ const ClientForm: React.FC<ClientFormProps> = ({ initialClient, onSubmit, onCanc
               <i className="fas fa-id-card mr-2"></i> Identité & Responsables
             </h4>
             <div className="space-y-4">
-              <InputWrapper label="Raison Sociale *">
-                {renderInput('name', formData.name, {
-                  type: "text",
-                  placeholder: "Nom de l'entreprise",
-                  required: true,
-                  className: "font-bold text-slate-800 dark:text-white"
-                })}
-              </InputWrapper>
-              <div className="grid grid-cols-2 gap-4">
-                <InputWrapper label="Responsable (Manager)">
-                  {renderInput('manager', formData.manager, {
+              <div className="grid grid-cols-1">
+                <InputWrapper label="Raison Sociale *">
+                  {renderInput('name', formData.name, {
                     type: "text",
-                    placeholder: "Nom du responsable"
+                    placeholder: "Nom de l'entreprise",
+                    required: true,
+                    className: "font-bold text-slate-800 dark:text-white"
                   })}
-                </InputWrapper>
-                <InputWrapper label="Gamme / Type">
-                  <select
-                    value={formData.gamme}
-                    onChange={(e) => handleInputChange('gamme', e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/10 outline-none appearance-none dark:text-slate-200"
-                  >
-                    <option value="">Sélectionner...</option>
-                    <option value="Haute Gamme">Haute Gamme</option>
-                    <option value="Haute et Moyenne">Haute et Moyenne</option>
-                    <option value="Moyenne gamme">Moyenne gamme</option>
-                    <option value="Economie">Economie</option>
-                  </select>
                 </InputWrapper>
               </div>
               <InputWrapper label="E-mail Utilisateur (Interne)">
@@ -195,7 +173,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ initialClient, onSubmit, onCanc
             <h4 className="text-xs font-black uppercase text-orange-500 dark:text-orange-400 border-b border-orange-50 dark:border-white/5 pb-2 flex items-center">
               <i className="fas fa-map-marked-alt mr-2"></i> Localisation Géographique
             </h4>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="md:col-span-1">
                 <InputWrapper label="Adresse Complète">
                   {renderInput('address', formData.address, {
@@ -208,12 +186,6 @@ const ClientForm: React.FC<ClientFormProps> = ({ initialClient, onSubmit, onCanc
                 {renderInput('city', formData.city, {
                   type: "text",
                   placeholder: "Ex: Casablanca"
-                })}
-              </InputWrapper>
-              <InputWrapper label="Région">
-                {renderInput('region', formData.region, {
-                  type: "text",
-                  placeholder: "Ex: Grand Casablanca"
                 })}
               </InputWrapper>
             </div>

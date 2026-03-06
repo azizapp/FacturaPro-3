@@ -134,8 +134,7 @@ const App: React.FC = () => {
               else addInvoice(invoice);
               setActiveView('invoices');
             }} 
-            onCancel={() => setActiveView('invoices')}
-            onAddClient={() => { setSelectedClientId(null); setActiveView('client-form'); }}
+            onCancel={() => setActiveView('invoices')} 
           />
         );
       case 'product-form': 

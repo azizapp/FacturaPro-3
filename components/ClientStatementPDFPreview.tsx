@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { Invoice, Client, Company } from '../types';
 
 interface ClientStatementPDFPreviewProps {
@@ -10,11 +9,9 @@ interface ClientStatementPDFPreviewProps {
 }
 
 const ClientStatementPDFPreview: React.FC<ClientStatementPDFPreviewProps> = ({ client, invoices, company, onClose }) => {
-  const handlePrint = () => {
-    window.print();
-  };
+  const [isPrinting, setIsPrinting] = useState(false);
 
-  const payments = invoices.flatMap(inv => 
+  const payments = invoices.flatMap(inv =>
     (inv.payments || []).map(p => ({
       ...p,
       invoiceNumber: inv.number
@@ -26,106 +23,162 @@ const ClientStatementPDFPreview: React.FC<ClientStatementPDFPreviewProps> = ({ c
   const totalPieces = invoices.reduce((sum, inv) => sum + inv.items.reduce((s, item) => s + item.quantity, 0), 0);
   const balance = totalInvoiced - totalCollected;
 
+  const handlePrint = async () => {
+    const element = document.querySelector('.statement-printable-container');
+    if (!element) return;
+    setIsPrinting(true);
+
+    const filename = `Releve_Compte_${client.name.replace(/\s+/g, '_')}_${new Date().getTime()}.pdf`;
+    const opt = {
+      margin: 0,
+      filename: filename,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, letterRendering: true, logging: false },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      pagebreak: { mode: 'avoid-all', avoid: ['.statement-printable-container'] }
+    };
+
+    try {
+      // @ts-ignore
+      const pdfBlob = await html2pdf()
+        .from(element)
+        .set(opt)
+        .toPdf()
+        .get('pdf')
+        .then((pdf: any) => {
+          // Cleanup extra blank pages
+          const totalPages = pdf.internal.getNumberOfPages();
+          for (let i = totalPages; i > 1; i--) {
+            pdf.deletePage(i);
+          }
+          return pdf.output('bloburl');
+        });
+
+      // Hidden iframe print
+      const iframe = document.createElement('iframe');
+      iframe.style.position = 'fixed';
+      iframe.style.right = '0';
+      iframe.style.bottom = '0';
+      iframe.style.width = '0';
+      iframe.style.height = '0';
+      iframe.style.border = 'none';
+      iframe.src = pdfBlob;
+
+      iframe.onload = () => {
+        setIsPrinting(false);
+        setTimeout(() => {
+          if (iframe.contentWindow) {
+            iframe.contentWindow.onbeforeunload = () => null;
+            iframe.contentWindow.onafterprint = () => {
+              setTimeout(() => document.body.removeChild(iframe), 500);
+            };
+            iframe.contentWindow.focus();
+            iframe.contentWindow.print();
+          }
+        }, 300);
+      };
+
+      document.body.appendChild(iframe);
+
+    } catch (error) {
+      console.error("Erreur Impression Relevé:", error);
+      setIsPrinting(false);
+    }
+  };
+
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md overflow-hidden print:overflow-visible statement-modal-wrapper">
-      <div className="bg-white w-full max-w-5xl h-[95vh] rounded-[15px] shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-8 duration-300 print:h-auto print:w-full print:shadow-none print:rounded-none print:static print:block">
-        
-        {/* Header - Hidden on Print */}
-        <div className="p-5 bg-slate-900 flex items-center justify-between text-white shrink-0 print:hidden">
-          <div className="flex items-center space-x-4 ml-4">
-            <div className="w-10 h-10 bg-orange-500 rounded-xl flex items-center justify-center text-white">
-              <i className="fas fa-file-invoice-dollar text-xl"></i>
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md overflow-hidden print:overflow-visible font-sans text-slate-900 statement-modal-wrapper">
+      <div className="bg-white w-full max-w-5xl h-[95vh] rounded-[15px] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 print:h-auto print:w-full print:shadow-none print:rounded-none print:static print:block relative">
+
+        {/* Barra d'outils */}
+        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-white shrink-0 print:hidden relative z-20">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center text-white shadow-md">
+              <i className="fas fa-file-invoice-dollar text-lg"></i>
             </div>
             <div>
-              <span className="font-black text-sm uppercase tracking-widest">Relevé de Compte</span>
-              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{client.name}</p>
+              <h4 className="text-sm font-black text-slate-800 uppercase tracking-tight">Relevé de Compte</h4>
+              <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">{client.name}</p>
             </div>
           </div>
-          <div className="flex items-center space-x-3">
-            <button 
+          <div className="flex items-center space-x-2">
+            <button
               onClick={handlePrint}
-              className="px-8 py-2.5 bg-orange-600 hover:bg-orange-700 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all shadow-lg active:scale-95 flex items-center space-x-2"
+              disabled={isPrinting}
+              className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-lg font-black text-[10px] uppercase tracking-widest transition-all shadow-lg active:scale-95 flex items-center disabled:opacity-50"
             >
-              <i className="fas fa-print"></i>
-              <span>Imprimer Rapport</span>
+              <i className="fas fa-print mr-2"></i>
+              {isPrinting ? 'Préparation...' : 'Imprimer'}
             </button>
-            <button onClick={onClose} className="w-10 h-10 flex items-center justify-center hover:bg-white/10 rounded-full transition-colors ml-2">
-              <i className="fas fa-times text-lg text-slate-400"></i>
+            <button onClick={onClose} className="px-4 py-2 bg-slate-100 rounded-lg font-bold text-[10px] uppercase tracking-widest text-slate-400 hover:bg-slate-200 transition-colors">
+              Fermer
             </button>
           </div>
         </div>
 
-        {/* Scrollable Preview Area */}
-        <div className="flex-1 overflow-y-auto p-12 bg-slate-100 custom-scrollbar print:p-0 print:bg-white print:overflow-visible">
-          {/* THE PRINTABLE SHEET */}
-          <div className="printable-sheet mx-auto bg-white p-[15mm] shadow-2xl border border-slate-200 print:border-none print:shadow-none print:p-15mm print:m-0 w-full max-w-[900px] font-sans text-slate-900 print:max-w-none rounded-[15px]">
-            
-            {/* Header */}
-            <div className="flex justify-between items-start mb-16">
-              <div className="space-y-4">
+        {/* Zone de prévisualisation */}
+        <div className="flex-1 overflow-y-auto bg-slate-100 p-6 custom-scrollbar print:p-0 print:bg-white print:overflow-visible flex flex-col items-center">
+          <div className="statement-printable-container bg-white p-[10mm] shadow-xl print:shadow-none print:p-[10mm] print:m-0 w-[210mm] min-h-[297mm] flex flex-col relative overflow-hidden" style={{ boxSizing: 'border-box' }}>
+
+            {/* Header: Logo & Title */}
+            <div className="flex justify-between items-start mb-8">
+              <div className="w-[200px]">
                 {company.logo ? (
-                  <img src={company.logo} className="w-24 h-24 object-contain" alt="Logo" />
+                  <img src={company.logo} className="w-full object-contain" alt="Logo" />
                 ) : (
-                  <div className="w-24 h-24 bg-slate-900 rounded-[30px] flex items-center justify-center text-white font-black text-3xl">
-                    {company.name.charAt(0)}
+                  <div className="text-2xl font-black text-[#1a2b5e] italic leading-tight">
+                    {company.name}
                   </div>
                 )}
-                <div className="text-left">
-                  <h1 className="text-2xl font-black uppercase tracking-tighter">{company.name}</h1>
-                  <p className="text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-widest">{company.address}{company.city ? `, ${company.city}` : ''}</p>
-                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">SIRET: {company.siret}</p>
-                </div>
               </div>
               <div className="text-right">
-                <h2 className="text-4xl font-black text-indigo-600 mb-2 uppercase tracking-tighter">RELEVÉ DE COMPTE</h2>
-                <div className="space-y-1">
-                  <p className="text-sm font-black text-slate-800">Généré le: {new Date().toLocaleDateString('fr-FR')}</p>
-                  <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest italic">Document d'analyse comptable</p>
-                </div>
+                <h2 className="text-2xl font-black text-indigo-600 mb-1 uppercase tracking-tighter">Relevé de Compte</h2>
+                <p className="text-[11px] font-bold text-slate-800">Date: {new Date().toLocaleDateString('fr-FR')}</p>
+                <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Document d'analyse</p>
               </div>
             </div>
 
-            {/* Account Summary Bar */}
-            <div className="bg-slate-50 rounded-[40px] p-10 mb-16 flex justify-between items-center border border-slate-100 print:bg-white print:border-slate-200">
-               <div className="text-left">
-                 <p className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] mb-2">Situation du Client</p>
-                 <p className="text-2xl font-black text-slate-800 uppercase tracking-tight">{client.name}</p>
-                 <p className="text-sm text-slate-500 mt-1 italic">{client.address}</p>
-               </div>
-               <div className="text-right bg-white p-6 rounded-3xl border border-slate-100 shadow-sm print:shadow-none">
-                 <p className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] mb-2">Solde Débiteur</p>
-                 <p className="text-4xl font-black text-rose-600 tracking-tighter">{balance.toLocaleString()} <span className="text-sm">MAD</span></p>
-               </div>
+            {/* Client Info Bar */}
+            <div className="flex justify-between items-center bg-[#f4f7fe]/60 border border-slate-100 p-4 rounded-xl mb-8">
+              <div>
+                <p className="text-[9px] font-black uppercase text-indigo-400 tracking-widest mb-1">Client</p>
+                <p className="text-base font-black text-[#1a2b5e] uppercase">{client.name}</p>
+                <p className="text-[10px] font-medium text-slate-500 mt-0.5">{client.address || "Adresse non spécifiée"} {client.city ? `- ${client.city}` : ""}</p>
+              </div>
+              <div className="text-right pr-2">
+                <p className="text-[9px] font-black uppercase text-indigo-400 tracking-widest mb-1">Solde Débiteur</p>
+                <p className="text-2xl font-black text-[#1a2b5e] tracking-tight">{balance.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} <span className="text-[10px] text-slate-500">MAD</span></p>
+              </div>
             </div>
 
             {/* Invoices History */}
-            <div className="mb-12">
-              <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-indigo-600 border-b-2 border-indigo-50 pb-3 mb-6 flex items-center">
-                <i className="fas fa-file-invoice mr-3"></i> Historique des Facturations
+            <div className="mb-6">
+              <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3 border-b border-slate-100 pb-2">
+                <i className="fas fa-file-invoice mr-2 text-indigo-400"></i> Facturations
               </h4>
-              <table className="w-full text-left mb-8 border-collapse">
+              <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-slate-900 text-white">
-                    <th className="py-4 px-4 text-[9px] font-black uppercase tracking-widest rounded-tl-xl text-left">Date</th>
-                    <th className="py-4 px-4 text-[9px] font-black uppercase tracking-widest text-left">Réf. Facture</th>
-                    <th className="py-4 px-4 text-center text-[9px] font-black uppercase tracking-widest">Pièces</th>
-                    <th className="py-4 px-4 text-right text-[9px] font-black uppercase tracking-widest">Débit (TTC)</th>
-                    <th className="py-4 px-4 text-right text-[9px] font-black uppercase tracking-widest">Réglé</th>
-                    <th className="py-4 px-4 text-right text-[9px] font-black uppercase tracking-widest rounded-tr-xl">Solde</th>
+                  <tr className="bg-slate-50">
+                    <th className="py-2 px-3 text-[9px] font-black text-slate-400 uppercase tracking-widest rounded-tl-lg">Date</th>
+                    <th className="py-2 px-3 text-[9px] font-black text-slate-400 uppercase tracking-widest">Réf.</th>
+                    <th className="py-2 px-3 text-center text-[9px] font-black text-slate-400 uppercase tracking-widest">Pièces</th>
+                    <th className="py-2 px-3 text-right text-[9px] font-black text-slate-400 uppercase tracking-widest">Débit TTC</th>
+                    <th className="py-2 px-3 text-right text-[9px] font-black text-slate-400 uppercase tracking-widest">Réglé</th>
+                    <th className="py-2 px-3 text-right text-[9px] font-black text-slate-400 uppercase tracking-widest rounded-tr-lg">Solde</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 text-xs font-medium">
+                <tbody className="divide-y divide-slate-50">
                   {invoices.map((inv) => {
                     const paid = (inv.payments || []).reduce((s, p) => s + p.amount, 0);
                     const qty = inv.items.reduce((s, i) => s + i.quantity, 0);
                     return (
-                      <tr key={inv.id} className="hover:bg-slate-50/50 transition-colors">
-                        <td className="py-4 px-4 text-slate-500 text-left">{new Date(inv.date).toLocaleDateString('fr-FR')}</td>
-                        <td className="py-4 px-4 font-black text-slate-800 uppercase text-left">{inv.number}</td>
-                        <td className="py-4 px-4 text-center font-black text-slate-600">{qty}</td>
-                        <td className="py-4 px-4 text-right font-black">{inv.grandTotal.toLocaleString()}</td>
-                        <td className="py-4 px-4 text-right font-black text-emerald-600">{paid.toLocaleString()}</td>
-                        <td className="py-4 px-4 text-right font-black text-rose-500 bg-rose-50/30 print:bg-white">{ (inv.grandTotal - paid).toLocaleString()}</td>
+                      <tr key={inv.id} className="hover:bg-slate-50 border-b border-slate-100">
+                        <td className="py-2.5 px-3 text-[10px] text-slate-500">{new Date(inv.date).toLocaleDateString('fr-FR')}</td>
+                        <td className="py-2.5 px-3 font-bold text-[11px] text-[#1a2b5e] uppercase">{inv.number}</td>
+                        <td className="py-2.5 px-3 text-center text-[10px] font-bold text-slate-500">{qty}</td>
+                        <td className="py-2.5 px-3 text-right text-[11px] font-bold text-slate-700">{inv.grandTotal.toLocaleString('fr-FR', { minimumFractionDigits: 2 })}</td>
+                        <td className="py-2.5 px-3 text-right text-[11px] font-bold text-emerald-600">{paid.toLocaleString('fr-FR', { minimumFractionDigits: 2 })}</td>
+                        <td className="py-2.5 px-3 text-right text-[11px] font-black text-rose-500 bg-rose-50/20">{(inv.grandTotal - paid).toLocaleString('fr-FR', { minimumFractionDigits: 2 })}</td>
                       </tr>
                     );
                   })}
@@ -134,129 +187,78 @@ const ClientStatementPDFPreview: React.FC<ClientStatementPDFPreviewProps> = ({ c
             </div>
 
             {/* Payments History */}
-            <div className="mb-16">
-              <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-emerald-600 border-b-2 border-emerald-50 pb-3 mb-6 flex items-center">
-                <i className="fas fa-receipt mr-3"></i> Historique des Règlements
+            <div className="mb-8">
+              <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3 border-b border-slate-100 pb-2">
+                <i className="fas fa-money-check-alt mr-2 text-emerald-400"></i> Règlements
               </h4>
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-slate-900 text-white">
-                    <th className="py-4 px-4 text-[9px] font-black uppercase tracking-widest rounded-tl-xl text-left">Date Encaissement</th>
-                    <th className="py-4 px-4 text-[9px] font-black uppercase tracking-widest text-left">Facture Concernée</th>
-                    <th className="py-4 px-4 text-[9px] font-black uppercase tracking-widest text-left">Mode</th>
-                    <th className="py-4 px-4 text-right text-[9px] font-black uppercase tracking-widest rounded-tr-xl">Crédit (MAD)</th>
+                  <tr className="bg-slate-50">
+                    <th className="py-2 px-3 text-[9px] font-black text-slate-400 uppercase tracking-widest rounded-tl-lg">Date</th>
+                    <th className="py-2 px-3 text-[9px] font-black text-slate-400 uppercase tracking-widest">Facture</th>
+                    <th className="py-2 px-3 text-center text-[9px] font-black text-slate-400 uppercase tracking-widest">Mode</th>
+                    <th className="py-2 px-3 text-right text-[9px] font-black text-slate-400 uppercase tracking-widest rounded-tr-lg">Montant</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 text-xs font-medium">
+                <tbody className="divide-y divide-slate-50">
                   {payments.map((p, idx) => (
-                    <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="py-4 px-4 text-slate-500 text-left">{new Date(p.date).toLocaleDateString('fr-FR')}</td>
-                      <td className="py-4 px-4 font-black text-indigo-600 uppercase text-left">{p.invoiceNumber}</td>
-                      <td className="py-4 px-4 uppercase text-[10px] font-black text-slate-400 tracking-widest text-left">{p.method}</td>
-                      <td className="py-4 px-4 text-right font-black text-emerald-600">+{p.amount.toLocaleString()}</td>
+                    <tr key={idx} className="border-b border-slate-100">
+                      <td className="py-2.5 px-3 text-[10px] text-slate-500">{new Date(p.date).toLocaleDateString('fr-FR')}</td>
+                      <td className="py-2.5 px-3 font-bold text-[11px] text-indigo-600 uppercase">{p.invoiceNumber}</td>
+                      <td className="py-2.5 px-3 text-center text-[9px] font-bold text-slate-500 uppercase tracking-widest">{p.method}</td>
+                      <td className="py-2.5 px-3 text-right text-[11px] font-black text-emerald-600">+{p.amount.toLocaleString('fr-FR', { minimumFractionDigits: 2 })}</td>
                     </tr>
                   ))}
+                  {payments.length === 0 && (
+                    <tr>
+                      <td colSpan={4} className="py-4 text-center text-[10px] text-slate-400 italic">Aucun règlement enregistré.</td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
 
-            <div className="flex justify-end pt-12 border-t-4 border-slate-900">
-              <div className="w-80 space-y-4">
-                <div className="flex justify-between text-[11px] font-black text-slate-400 uppercase tracking-widest">
-                  <span>Volume Total</span>
-                  <span className="text-slate-800">{totalPieces} UNITÉS</span>
+            <div className="flex-1"></div>
+
+            {/* Summary Footer */}
+            <div className="mt-8 flex justify-end border-t-2 border-[#1a2b5e] pt-4">
+              <div className="w-[300px] space-y-2">
+                <div className="flex justify-between text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                  <span>Unités Facturées</span>
+                  <span className="text-[#1a2b5e]">{totalPieces}</span>
                 </div>
-                <div className="flex justify-between text-[11px] font-black text-slate-400 uppercase tracking-widest">
-                  <span>Cumul Facturé</span>
-                  <span className="text-slate-800">{totalInvoiced.toLocaleString()}</span>
+                <div className="flex justify-between text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                  <span>Total Débit</span>
+                  <span className="text-[#1a2b5e]">{totalInvoiced.toLocaleString('fr-FR', { minimumFractionDigits: 2 })}</span>
                 </div>
-                <div className="flex justify-between text-[11px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-4">
-                  <span>Cumul Encaissé</span>
-                  <span className="text-emerald-600">{totalCollected.toLocaleString()}</span>
+                <div className="flex justify-between text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-slate-100 pb-2">
+                  <span>Total Règlements</span>
+                  <span className="text-emerald-600">{totalCollected.toLocaleString('fr-FR', { minimumFractionDigits: 2 })}</span>
                 </div>
-                <div className="flex justify-between items-center pt-2">
-                  <span className="text-[11px] font-black uppercase text-slate-900 tracking-[0.2em]">Reste à Recouvrer</span>
-                  <span className="text-4xl font-black text-indigo-600 tracking-tighter">{balance.toLocaleString()} <span className="text-sm">MAD</span></span>
+                <div className="flex justify-between items-center pt-1">
+                  <span className="text-[11px] font-black uppercase text-[#1a2b5e] tracking-widest">Reste à Recouvrer</span>
+                  <span className="text-lg font-black text-rose-600 tracking-tight">{balance.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} MAD</span>
                 </div>
               </div>
             </div>
 
-            <div className="mt-24 pt-12 border-t border-slate-100 text-[10px] text-slate-300 uppercase tracking-[0.4em] text-center leading-loose font-medium">
-              {company.footer || "Ce relevé est certifié conforme par FacturaPro."}
+            <div className="mt-8 pt-4 border-t border-slate-100 text-[9px] text-slate-300 uppercase tracking-[0.2em] text-center font-bold">
+              {company.footer || "Relevé produit par FacturaPro."}
             </div>
+
           </div>
         </div>
       </div>
-      
-      <style dangerouslySetInnerHTML={{ __html: `
+
+      <style dangerouslySetInnerHTML={{
+        __html: `
         @media print {
           @page { size: A4 portrait; margin: 0; }
-          
-          * { 
-            -webkit-print-color-adjust: exact !important; 
-            print-color-adjust: exact !important; 
-            color-adjust: exact !important;
-          }
-          
-          html, body {
-            margin: 0 !important;
-            padding: 0 !important;
-            background: white !important;
-            overflow: visible !important;
-            height: auto !important;
-          }
-
-          /* Masquer tout le contenu de l'app par défaut */
-          body > * {
-            visibility: hidden !important;
-          }
-
-          /* Rendre visible uniquement le relevé de compte */
-          .statement-modal-wrapper, 
-          .statement-modal-wrapper * {
-            visibility: visible !important;
-          }
-
-          .statement-modal-wrapper {
-            position: absolute !important;
-            left: 0 !important;
-            top: 0 !important;
-            width: 100% !important;
-            padding: 0 !important;
-            margin: 0 !important;
-            background: white !important;
-            display: block !important;
-            z-index: 999999 !important;
-          }
-
-          .print\\:hidden, .bg-slate-900\\/60, .backdrop-blur-md {
-            display: none !important;
-            visibility: hidden !important;
-          }
-
-          .printable-sheet {
-            box-shadow: none !important;
-            border: none !important;
-            width: 210mm !important;
-            min-height: 297mm !important;
-            margin: 0 auto !important;
-            padding: 15mm !important;
-            background: white !important;
-            border-radius: 0 !important;
-            box-sizing: border-box !important;
-          }
-
-          .bg-slate-50 {
-            background-color: #f8fafc !important;
-            border-color: #e2e8f0 !important;
-          }
-          
-          .bg-slate-900 {
-            background-color: #0f172a !important;
-          }
-
-          .text-white { color: black !important; }
-          .text-slate-900 { color: black !important; }
+          * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+          body > * { visibility: hidden !important; }
+          .statement-modal-wrapper, .statement-modal-wrapper * { visibility: visible !important; }
+          .statement-modal-wrapper { position: absolute !important; left: 0; top: 0; width: 100%; display: block !important; margin: 0; padding: 0; background: white; z-index: 999999; }
+          .print\\:hidden, .bg-slate-900\\/80, .backdrop-blur-md { display: none !important; }
         }
       `}} />
     </div>

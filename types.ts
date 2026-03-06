@@ -44,16 +44,13 @@ export interface Company {
 export interface Client {
   id: string;
   name: string;
-  manager?: string;
   location?: string;
   city?: string;
-  region?: string;
   address: string;
   gsm1?: string;
   gsm2?: string;
   phone: string;
   email: string;
-  gamme?: string;
   user_email?: string;
   is_blocked: boolean;
   created_at?: string;

@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Invoice, Client, InvoiceStatus } from '../types';
 import { summarizeInvoices } from '../services/geminiService';
@@ -11,14 +11,9 @@ interface DashboardProps {
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ invoices, clients }) => {
-  const { theme } = useAppContext();
+  const { theme, products } = useAppContext();
   const [aiAnalysis, setAiAnalysis] = useState<any>(null);
   const [analyzing, setAnalyzing] = useState(false);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   const stats = useMemo(() => {
     const totalTtc = invoices.reduce((acc, inv) => acc + (inv.grandTotal || 0), 0);
@@ -42,40 +37,41 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, clients }) => {
   }, [invoices]);
 
   const salesByProduct = useMemo(() => {
-    const targetGammas = [
-      "APOLLO™ CLIP EASE",
-      "APOLLO™ EXCLUSIVE",
-      "APOLLO™ MINISTARS",
-      "APOLLO™ SUNGLASSES",
-      "APOLLO™EYEWEAR",
-      "LENZO BRAND"
-    ];
-
     const map = new Map<string, number>();
-    targetGammas.forEach(g => map.set(g, 0));
+
+    // Initialize all existing products from the database with 0 sales
+    products.forEach(p => map.set(p.name, 0));
 
     invoices.forEach(inv => {
       inv.items.forEach(item => {
-        const prodName = (item.productName || "").toUpperCase();
-        const matchedGamma = targetGammas.find(gamma =>
-          prodName.includes(gamma.toUpperCase())
+        const itemName = item.productName || "";
+
+        // Find if this invoice item matches any product in our DB (case-insensitive)
+        const matchedProduct = products.find(p =>
+          itemName.toUpperCase().includes(p.name.toUpperCase())
         );
 
-        if (matchedGamma) {
-          map.set(matchedGamma, (map.get(matchedGamma) || 0) + item.quantity);
+        if (matchedProduct) {
+          map.set(matchedProduct.name, (map.get(matchedProduct.name) || 0) + item.quantity);
+        } else if (itemName.trim() !== "") {
+          // If the product generated a sale but was removed/isn't in the DB anymore, 
+          // we still count it under its invoice name.
+          map.set(itemName, (map.get(itemName) || 0) + item.quantity);
         }
       });
     });
 
     return Array.from(map.entries())
       .map(([name, count]) => ({ name, count }))
-      .sort((a, b) => b.count - a.count);
-  }, [invoices]);
+      .filter((product) => product.count > 0 || products.some(p => p.name === product.name)) // Keep items with sales OR items in DB
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10); // Show top 10 to avoid huge tables
+  }, [invoices, products]);
 
   const handleAiAnalysis = async () => {
     setAnalyzing(true);
     try {
-      const result = await summarizeInvoices(invoices);
+      const result = await summarizeInvoices(invoices, clients, products);
       setAiAnalysis(result);
     } catch (error) {
       console.error("Erreur analyse IA:", error);
@@ -85,6 +81,7 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, clients }) => {
   };
 
   const isDark = theme === 'dark';
+  const totalSalesCount = useMemo(() => salesByProduct.reduce((sum, p) => sum + p.count, 0), [salesByProduct]);
   const maxSales = salesByProduct.length > 0 ? Math.max(...salesByProduct.map(s => s.count), 1) : 1;
 
   return (
@@ -107,32 +104,30 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, clients }) => {
             </h3>
           </div>
           <div className="flex-1 w-full" style={{ minHeight: '300px' }}>
-            {mounted && (
-              <ResponsiveContainer width="100%" height="100%" minHeight={300}>
-                <AreaChart data={monthlyData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="colorAmt" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#6366f1" stopOpacity={0.2} />
-                      <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#1e293b' : '#f1f5f9'} />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10 }} dy={10} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10 }} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
-                  <Tooltip
-                    contentStyle={{ 
-                      borderRadius: '15px', 
-                      border: 'none', 
-                      boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)', 
-                      backgroundColor: isDark ? '#0f172a' : '#fff',
-                      padding: '12px'
-                    }}
-                    itemStyle={{ fontWeight: 'black', color: '#6366f1', fontSize: '12px' }}
-                  />
-                  <Area type="monotone" dataKey="amount" stroke="#6366f1" strokeWidth={3} fill="url(#colorAmt)" animationDuration={1500} />
-                </AreaChart>
-              </ResponsiveContainer>
-            )}
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={monthlyData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorAmt" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.2} />
+                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#1e293b' : '#f1f5f9'} />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10 }} dy={10} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10 }} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
+                <Tooltip
+                  contentStyle={{
+                    borderRadius: '15px',
+                    border: 'none',
+                    boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)',
+                    backgroundColor: isDark ? '#0f172a' : '#fff',
+                    padding: '12px'
+                  }}
+                  itemStyle={{ fontWeight: 'black', color: '#6366f1', fontSize: '12px' }}
+                />
+                <Area type="monotone" dataKey="amount" stroke="#6366f1" strokeWidth={3} fill="url(#colorAmt)" animationDuration={1500} />
+              </AreaChart>
+            </ResponsiveContainer>
           </div>
         </div>
 
@@ -177,7 +172,7 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, clients }) => {
                 </div>
               )}
             </div>
-            
+
             <div className="pt-4 shrink-0">
               <button onClick={handleAiAnalysis} className="w-full bg-white text-indigo-600 dark:bg-indigo-600 dark:text-white font-black py-4 rounded-xl text-[10px] uppercase tracking-widest shadow-lg hover:bg-slate-100 dark:hover:bg-indigo-500 transition-all active:scale-95">
                 {aiAnalysis ? 'Actualiser Analyse' : 'Analyser les données'}
@@ -198,25 +193,32 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, clients }) => {
         </div>
 
         <div className="space-y-8">
-          {salesByProduct.length > 0 ? salesByProduct.map((product, idx) => (
-            <div key={product.name} className="flex items-center space-x-6">
-              <div className={`w-12 h-12 rounded-full flex items-center justify-center font-black text-xs shrink-0 shadow-sm border-2 ${idx % 2 === 0 ? 'bg-indigo-50 text-indigo-600 border-indigo-100 dark:bg-indigo-500/10 dark:border-indigo-500/20' : 'bg-emerald-50 text-emerald-600 border-emerald-100 dark:bg-emerald-500/10 dark:border-emerald-500/20'}`}>
-                {product.name.charAt(0).toUpperCase()}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-xs font-black text-slate-700 dark:text-slate-200 truncate pr-4">{product.name}</span>
-                  <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">{product.count} VENTES</span>
+          {salesByProduct.length > 0 ? salesByProduct.map((product, idx) => {
+            const percentage = totalSalesCount > 0 ? ((product.count / totalSalesCount) * 100).toFixed(1) : "0.0";
+            return (
+              <div key={product.name} className="flex items-center space-x-6">
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center font-black text-xs shrink-0 shadow-sm border-2 ${idx % 2 === 0 ? 'bg-indigo-50 text-indigo-600 border-indigo-100 dark:bg-indigo-500/10 dark:border-indigo-500/20' : 'bg-emerald-50 text-emerald-600 border-emerald-100 dark:bg-emerald-500/10 dark:border-emerald-500/20'}`}>
+                  {product.name.charAt(0).toUpperCase()}
                 </div>
-                <div className="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full transition-all duration-1000 ${idx % 2 === 0 ? 'bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.5)]' : 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]'}`}
-                    style={{ width: `${(product.count / maxSales) * 100}%` }}
-                  ></div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-xs font-black text-slate-700 dark:text-slate-200 truncate pr-4">{product.name}</span>
+                    <div className="flex items-center space-x-3 text-right">
+                      <span className="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                        {product.count} VENTES <span className="opacity-50 mx-1">|</span> <span className={idx % 2 === 0 ? 'text-indigo-500' : 'text-emerald-500'}>{percentage}%</span>
+                      </span>
+                    </div>
+                  </div>
+                  <div className="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full transition-all duration-1000 ${idx % 2 === 0 ? 'bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.5)]' : 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]'}`}
+                      style={{ width: `${(product.count / maxSales) * 100}%` }}
+                    ></div>
+                  </div>
                 </div>
               </div>
-            </div>
-          )) : (
+            );
+          }) : (
             <div className="text-center py-8 text-slate-400 italic text-xs">
               Aucune donnée de vente disponible pour le moment.
             </div>

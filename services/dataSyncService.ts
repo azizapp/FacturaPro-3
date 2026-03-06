@@ -1,6 +1,7 @@
 import { Invoice, Client, Product, Company } from '../types';
 import { jsonDatabase } from './jsonDatabase';
-import { db } from './supabaseService';
+import { db } from './database';
+import { getDbMode } from './supabaseClient';
 
 interface SyncStatus {
   isSyncing: boolean;
@@ -38,7 +39,7 @@ export class DataSyncService {
 
   // Perform background sync of data
   async performBackgroundSync(): Promise<void> {
-    if (this.syncStatus.isSyncing) {
+    if (this.syncStatus.isSyncing || getDbMode() === 'local') {
       return;
     }
 

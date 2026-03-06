@@ -75,7 +75,7 @@ export const db = {
         while (!finished) {
             const { data, error } = await supabase
                 .from('customers')
-                .select('id, name, manager, location, city, region, address, gsm1, gsm2, phone, email, gamme, user_email, is_blocked, created_at, ice')
+                .select('id, name, location, city, address, gsm1, gsm2, phone, email, user_email, is_blocked, created_at, ice')
                 .order('name', { ascending: true })
                 .range(from, to);
 
@@ -105,7 +105,7 @@ export const db = {
         const { data, error } = await supabase
             .from('customers')
             .insert([clientToInsert])
-            .select('id, name, manager, location, city, region, address, gsm1, gsm2, phone, email, gamme, user_email, is_blocked, created_at, ice')
+            .select('id, name, location, city, address, gsm1, gsm2, phone, email, user_email, is_blocked, created_at, ice')
             .single();
 
         if (error) throw error;
@@ -118,7 +118,7 @@ export const db = {
             .from('customers')
             .update(updates)
             .eq('id', id)
-            .select('id, name, manager, location, city, region, address, gsm1, gsm2, phone, email, gamme, user_email, is_blocked, created_at, ice')
+            .select('id, name, location, city, address, gsm1, gsm2, phone, email, user_email, is_blocked, created_at, ice')
             .single();
 
         if (error) throw error;
@@ -188,7 +188,7 @@ export const db = {
             items: (inv.invoice_items || []).map((item: any) => ({
                 id: item.id,
                 productId: item.product_id,
-                productName: item.productName,
+                productName: item.product_name,
                 quantity: parseFloat(item.quantity),
                 price: parseFloat(item.price),
                 tvaRate: parseFloat(item.tva_rate),

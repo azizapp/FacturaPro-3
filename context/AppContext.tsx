@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Invoice, Client, Product, Company, Payment, InvoiceStatus, User } from '../types';
-import { db } from '../services/supabaseService';
+import { db } from '../services/database';
 import { dataSyncService } from '../services/dataSyncService';
 import { supabase } from '../services/supabaseClient';
 
@@ -46,7 +46,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     // Initialisation immédiate au montage
     useEffect(() => {
         const init = async () => {
-            // Charger le thème immédiatement (synchrone)
+            // Charger le thème
             const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
             if (savedTheme) {
                 setTheme(savedTheme);
@@ -55,19 +55,30 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
             // Charger les données du cache immédiatement pour un affichage instantané
             const cachedData = dataSyncService.getCachedData();
-            setInvoices(cachedData.invoices);
-            setClients(cachedData.clients);
-            setProducts(cachedData.products);
-            if (cachedData.company) setCompany(cachedData.company);
-            // Afficher les données immédiatement sans attendre le serveur
-            setIsLoading(false);
+            if (cachedData.invoices.length > 0 || cachedData.clients.length > 0 || cachedData.products.length > 0) {
+                setInvoices(cachedData.invoices);
+                setClients(cachedData.clients);
+                setProducts(cachedData.products);
+                if (cachedData.company) setCompany(cachedData.company);
+                // Si on a des données, on peut déjà arrêter l'affichage du spinner principal
+                setIsLoading(false);
+            }
 
-            // Vérifier la session Supabase en arrière-plan
-            const { data: { session } } = await supabase.auth.getSession();
-            if (session?.user) {
-                setUser({ id: session.user.id, email: session.user.email! });
-                // Sync fraîche avec le serveur en arrière-plan (ne bloque pas l'UI)
-                refreshUserData().catch(console.error);
+            // Vérifier la session Supabase existante (seulement si non-local)
+            const mode = localStorage.getItem('DB_MODE') || 'local';
+            if (mode === 'supabase') {
+                const { data: { session } } = await supabase.auth.getSession();
+                if (session?.user) {
+                    setUser({ id: session.user.id, email: session.user.email! });
+                    await refreshUserData();
+                } else {
+                    setIsLoading(false);
+                }
+            } else {
+                // Mode local : On considère l'utilisateur comme connecté avec un compte invité si besoin
+                // ou on laisse user à null s'il n'y a pas d'auth locale
+                setUser({ id: 'local-user', email: 'vendeur@local.com' });
+                setIsLoading(false);
             }
         };
 
@@ -94,16 +105,18 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     };
 
     const refreshUserData = async () => {
-        // Ne jamais afficher le loader lors du refresh - on a déjà des données en cache
-        // Cela permet une expérience utilisateur fluide sans interruptions
-        
+        // On n'affiche le loader que si on n'a absolument rien à afficher
+        if (invoices.length === 0 && clients.length === 0) {
+            setIsLoading(true);
+        }
+
         try {
             // Synchronisation en arrière-plan via le service de sync
             const freshData = await dataSyncService.initializeWithCache();
             setInvoices(freshData.invoices);
             setClients(freshData.clients);
             setProducts(freshData.products);
-            
+
             if (freshData.company) {
                 setCompany(freshData.company);
             } else if (!company) {
@@ -115,8 +128,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             }
         } catch (error) {
             console.error("Erreur lors du rafraîchissement des données:", error);
+        } finally {
+            setIsLoading(false);
         }
-        // Pas de setIsLoading(false) ici - on garde l'UI réactive
     };
 
     const logout = async () => {
@@ -124,9 +138,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         setUser(null);
     };
 
-    const addInvoice = (invoice: Invoice) => {
+    const addInvoice = async (invoice: Invoice) => {
         setInvoices(prev => [invoice, ...prev]);
-        db.addInvoice(invoice).catch(e => console.error("Erreur de synchro facture:", e));
+        try {
+            await db.addInvoice(invoice);
+        } catch (e) {
+            console.error("Erreur de synchro facture:", e);
+        }
         dataSyncService.addInvoice(invoice);
     };
 
@@ -142,9 +160,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         dataSyncService.deleteInvoice(id);
     };
 
-    const addClient = (client: Client) => {
+    const addClient = async (client: Client) => {
         setClients(prev => [...prev, client]);
-        db.addClient(client).catch(e => console.error("Erreur de synchro client:", e));
+        try {
+            await db.addClient(client);
+        } catch (e) {
+            console.error("Erreur de synchro client:", e);
+        }
         dataSyncService.addClient(client);
     };
 
