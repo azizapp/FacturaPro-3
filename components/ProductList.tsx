@@ -5,9 +5,11 @@ import { Product } from '../types';
 interface ProductListProps {
   products: Product[];
   onAddProduct: () => void;
+  onEditProduct: (product: Product) => void;
+  onDeleteProduct: (product: Product) => void;
 }
 
-const ProductList: React.FC<ProductListProps> = ({ products, onAddProduct }) => {
+const ProductList: React.FC<ProductListProps> = ({ products, onAddProduct, onEditProduct, onDeleteProduct }) => {
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex justify-between items-center">
@@ -15,7 +17,7 @@ const ProductList: React.FC<ProductListProps> = ({ products, onAddProduct }) => 
           <h3 className="text-xl font-black text-slate-800 dark:text-white uppercase tracking-tight">Catalogue Produits & Services</h3>
           <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Gérez vos prestations et articles standardisés</p>
         </div>
-        <button 
+        <button
           onClick={onAddProduct}
           className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest hover:bg-indigo-700 shadow-lg shadow-indigo-600/20 transition-all flex items-center space-x-2"
         >
@@ -64,10 +66,14 @@ const ProductList: React.FC<ProductListProps> = ({ products, onAddProduct }) => 
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center justify-center space-x-1">
-                      <button className="w-8 h-8 rounded-lg text-slate-400 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 hover:text-indigo-600 transition-all">
+                      <button
+                        onClick={() => onEditProduct(product)}
+                        className="w-8 h-8 rounded-lg text-slate-400 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 hover:text-indigo-600 transition-all">
                         <i className="fas fa-edit text-xs"></i>
                       </button>
-                      <button className="w-8 h-8 rounded-lg text-slate-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 hover:text-rose-600 transition-all">
+                      <button
+                        onClick={() => onDeleteProduct(product)}
+                        className="w-8 h-8 rounded-lg text-slate-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 hover:text-rose-600 transition-all">
                         <i className="fas fa-trash-alt text-xs"></i>
                       </button>
                     </div>

@@ -23,7 +23,7 @@ const App: React.FC = () => {
   const {
     invoices, clients, products, company, isLoading, theme, user, toggleTheme, logout, refreshUserData,
     addInvoice, updateInvoice, deleteInvoice, addClient, updateClient, deleteClient,
-    addProduct, updateCompany, addPayment, deletePayment
+    addProduct, updateProduct, deleteProduct, updateCompany, addPayment, deletePayment
   } = useAppContext();
 
   const [activeView, setActiveView] = useState<'dashboard' | 'invoices' | 'ledger' | 'clients' | 'products' | 'payments' | 'settings' | 'invoice-detail' | 'client-form' | 'invoice-form' | 'product-form'>('dashboard');
@@ -36,7 +36,7 @@ const App: React.FC = () => {
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [showPaymentModal, setShowPaymentModal] = useState<string | null>(null);
 
-  const [itemToDelete, setItemToDelete] = useState<{ id: string, type: 'invoice' | 'client' | 'payment', invoiceId?: string } | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<{ id: string, type: 'invoice' | 'client' | 'payment' | 'product', invoiceId?: string } | null>(null);
 
   useEffect(() => {
     const handleResize = () => {
@@ -59,6 +59,8 @@ const App: React.FC = () => {
       deleteClient(id);
     } else if (type === 'payment' && invoiceId) {
       deletePayment(invoiceId, id);
+    } else if (type === 'product') {
+      deleteProduct(id);
     }
     setItemToDelete(null);
   };
@@ -101,50 +103,52 @@ const App: React.FC = () => {
           onDeletePayment={(invId, payId) => setItemToDelete({ id: payId, type: 'payment', invoiceId: invId })}
         />;
       case 'clients': return <ClientList clients={clients} invoices={invoices} onAddClient={() => { setSelectedClientId(null); setActiveView('client-form'); }} onEditClient={(id) => { setSelectedClientId(id); setActiveView('client-form'); }} onDeleteClient={(id) => setItemToDelete({ id, type: 'client' })} onViewHistory={(id) => { setSelectedClientId(id); setActiveView('ledger'); }} />;
-      case 'products': return <ProductList products={products} onAddProduct={() => { setSelectedProductId(null); setActiveView('product-form'); }} />;
+      case 'products': return <ProductList products={products} onAddProduct={() => { setSelectedProductId(null); setActiveView('product-form'); }} onEditProduct={(product) => { setSelectedProductId(product.id); setActiveView('product-form'); }} onDeleteProduct={(product) => setItemToDelete({ id: product.id, type: 'product' })} />;
       case 'payments': return <PaymentPage invoices={invoices} clients={clients} onPaymentAdded={addPayment} />;
       case 'settings': return <Settings company={company} onUpdate={updateCompany} />;
       case 'invoice-detail':
         const inv = invoices.find(i => i.id === selectedInvoiceId);
         const cli = clients.find(c => c.id === inv?.clientId);
         return inv && cli ? <InvoiceDetailView invoice={inv} client={cli} company={company} onBack={() => setActiveView('invoices')} onAddPayment={(id) => setShowPaymentModal(id)} onPdf={(id) => setShowInvoicePdf(id)} onDelete={(id) => setItemToDelete({ id, type: 'invoice' })} /> : <div className="p-8 text-center text-slate-500">Facture non trouvée</div>;
-      case 'client-form': 
+      case 'client-form':
         return (
-          <ClientForm 
-            initialClient={clients.find(c => c.id === selectedClientId)} 
+          <ClientForm
+            initialClient={clients.find(c => c.id === selectedClientId)}
             onSubmit={(client) => {
               if (selectedClientId) updateClient(client);
               else addClient(client);
               setActiveView('clients');
-            }} 
-            onCancel={() => setActiveView('clients')} 
-            companyEmail={company?.email} 
+            }}
+            onCancel={() => setActiveView('clients')}
+            companyEmail={company?.email}
           />
         );
-      case 'invoice-form': 
+      case 'invoice-form':
         return (
-          <InvoiceForm 
-            clients={clients} 
-            products={products} 
-            company={company} 
-            invoices={invoices} 
-            initialInvoice={invoices.find(i => i.id === selectedInvoiceId)} 
+          <InvoiceForm
+            clients={clients}
+            products={products}
+            company={company}
+            invoices={invoices}
+            initialInvoice={invoices.find(i => i.id === selectedInvoiceId)}
             onSubmit={(invoice) => {
               if (selectedInvoiceId) updateInvoice(invoice);
               else addInvoice(invoice);
               setActiveView('invoices');
-            }} 
-            onCancel={() => setActiveView('invoices')} 
+            }}
+            onCancel={() => setActiveView('invoices')}
           />
         );
-      case 'product-form': 
+      case 'product-form':
         return (
-          <ProductForm 
+          <ProductForm
+            initialProduct={products.find(p => p.id === selectedProductId)}
             onSubmit={(product) => {
-              addProduct(product);
+              if (selectedProductId) updateProduct(product);
+              else addProduct(product);
               setActiveView('products');
-            }} 
-            onCancel={() => setActiveView('products')} 
+            }}
+            onCancel={() => setActiveView('products')}
           />
         );
       default: return <Dashboard invoices={invoices} clients={clients} />;

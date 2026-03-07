@@ -51,6 +51,20 @@ export const localDb = {
         return newProduct;
     },
 
+    updateProduct: async (product: Product): Promise<void> => {
+        const products = jsonDatabase.getProducts();
+        const index = products.findIndex(p => p.id === product.id);
+        if (index !== -1) {
+            products[index] = product;
+            jsonDatabase.setProducts(products);
+        }
+    },
+
+    deleteProduct: async (id: string): Promise<void> => {
+        const products = jsonDatabase.getProducts();
+        jsonDatabase.setProducts(products.filter(p => p.id !== id));
+    },
+
     // --- Invoices ---
     getInvoices: async (): Promise<Invoice[]> => {
         return jsonDatabase.getInvoices();

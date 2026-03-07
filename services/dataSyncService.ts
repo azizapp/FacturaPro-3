@@ -126,6 +126,12 @@ export class DataSyncService {
     jsonDatabase.setProducts(updatedProducts);
   }
 
+  async updateProduct(product: Product): Promise<void> {
+    const currentProducts = jsonDatabase.getProducts();
+    const updatedProducts = currentProducts.map(p => p.id === product.id ? product : p);
+    jsonDatabase.setProducts(updatedProducts);
+  }
+
   // Delete operations
   async deleteInvoice(id: string): Promise<void> {
     const currentInvoices = jsonDatabase.getInvoices();

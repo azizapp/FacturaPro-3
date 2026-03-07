@@ -27,6 +27,8 @@ interface AppContextType {
     updateClient: (client: Client) => void;
     deleteClient: (id: string) => void;
     addProduct: (product: Product) => void;
+    updateProduct: (product: Product) => void;
+    deleteProduct: (id: string) => void;
     updateCompany: (company: Company) => void;
     addPayment: (invoiceId: string, payment: Payment) => void;
     deletePayment: (invoiceId: string, paymentId: string) => void;
@@ -187,6 +189,18 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         dataSyncService.addProduct(product);
     };
 
+    const updateProduct = (product: Product) => {
+        setProducts(prev => prev.map(p => p.id === product.id ? product : p));
+        db.updateProduct(product).catch(e => console.error("Erreur de mise à jour produit:", e));
+        dataSyncService.updateProduct(product);
+    };
+
+    const deleteProduct = (id: string) => {
+        setProducts(prev => prev.filter(p => p.id !== id));
+        db.deleteProduct(id).catch(e => console.error("Erreur de suppression produit:", e));
+        dataSyncService.deleteProduct(id);
+    };
+
     const updateCompany = (newCompany: Company) => {
         setCompany(newCompany);
         // Utiliser une version simplifiée de mise à jour pour éviter les problèmes de RLS si l'ID n'est pas bon
@@ -239,7 +253,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             setInvoices, setClients, setProducts, setCompany,
             addInvoice, updateInvoice, deleteInvoice,
             addClient, updateClient, deleteClient,
-            addProduct, updateCompany, addPayment, deletePayment
+            addProduct, updateProduct, deleteProduct, updateCompany, addPayment, deletePayment
         }}>
             {children}
         </AppContext.Provider>

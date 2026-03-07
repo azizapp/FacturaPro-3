@@ -157,6 +157,27 @@ export const db = {
         return data;
     },
 
+    updateProduct: async (product: Product): Promise<void> => {
+        const { id, ...prodToUpdate } = product;
+        if (!id) throw new Error("Product ID is required for update");
+
+        const { error } = await supabase
+            .from('products')
+            .update(prodToUpdate)
+            .eq('id', id);
+
+        if (error) throw error;
+    },
+
+    deleteProduct: async (id: string): Promise<void> => {
+        const { error } = await supabase
+            .from('products')
+            .delete()
+            .eq('id', id);
+
+        if (error) throw error;
+    },
+
     // --- Invoices ---
     getInvoices: async (): Promise<Invoice[]> => {
         const { data, error } = await supabase
