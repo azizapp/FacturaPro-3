@@ -120,12 +120,20 @@ CREATE INDEX IF NOT EXISTS idx_payments_invoice_id ON public.payments(invoice_id
 
 
 -- ============================================================
--- Row Level Security (Uncomment to enable when ready)
+-- Row Level Security
 -- ============================================================
--- ALTER TABLE public."Factur_settings" ENABLE ROW LEVEL SECURITY;
--- ALTER TABLE public.customers         ENABLE ROW LEVEL SECURITY;
--- ALTER TABLE public.products          ENABLE ROW LEVEL SECURITY;
--- ALTER TABLE public.invoices          ENABLE ROW LEVEL SECURITY;
--- ALTER TABLE public.invoice_items     ENABLE ROW LEVEL SECURITY;
--- ALTER TABLE public.payments          ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public."Factur_settings" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.customers         ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.products          ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.invoices          ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.invoice_items     ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.payments          ENABLE ROW LEVEL SECURITY;
+
+-- Allow full access to all tables for the anon role (since the app uses anon key)
+CREATE POLICY "Allow all operations for Factur_settings" ON public."Factur_settings" FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all operations for customers" ON public.customers FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all operations for products" ON public.products FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all operations for invoices" ON public.invoices FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all operations for invoice_items" ON public.invoice_items FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all operations for payments" ON public.payments FOR ALL USING (true) WITH CHECK (true);
 
