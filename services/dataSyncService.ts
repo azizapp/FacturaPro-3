@@ -43,13 +43,45 @@ export class DataSyncService {
     return null;
   }
 
-  // Save cache to localStorage
+  // Save cache to localStorage with size limit handling
   private saveCacheToStorage(data: { invoices: Invoice[]; clients: Client[]; products: Product[]; company: Company | null }) {
     try {
-      localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+      // Try to save full data first
+      const serialized = JSON.stringify(data);
+      
+      // Check if data is too large (> 4MB to be safe)
+      if (serialized.length > 4 * 1024 * 1024) {
+        console.warn('Cache data too large, storing minimal data only');
+        // Store only essential data (products and company, skip invoices)
+        const minimalData = {
+          invoices: [],
+          clients: data.clients,
+          products: data.products,
+          company: data.company
+        };
+        localStorage.setItem(CACHE_KEY, JSON.stringify(minimalData));
+      } else {
+        localStorage.setItem(CACHE_KEY, serialized);
+      }
       localStorage.setItem(CACHE_TIMESTAMP_KEY, Date.now().toString());
     } catch (e) {
       console.error('Error saving cache:', e);
+      // If quota exceeded, try to clear old cache and retry with minimal data
+      if (e instanceof DOMException && e.name === 'QuotaExceededError') {
+        try {
+          localStorage.removeItem(CACHE_KEY);
+          const minimalData = {
+            invoices: [],
+            clients: data.clients.slice(0, 100), // Limit clients
+            products: data.products,
+            company: data.company
+          };
+          localStorage.setItem(CACHE_KEY, JSON.stringify(minimalData));
+          localStorage.setItem(CACHE_TIMESTAMP_KEY, Date.now().toString());
+        } catch (e2) {
+          console.error('Failed to save even minimal cache:', e2);
+        }
+      }
     }
   }
 
