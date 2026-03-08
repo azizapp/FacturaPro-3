@@ -110,7 +110,17 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         document.documentElement.classList.toggle('dark', newTheme === 'dark');
     };
 
+    let isRefreshing = false;
+    
     const refreshUserData = async () => {
+        // Prevent concurrent refreshes
+        if (isRefreshing) {
+            console.log('Refresh already in progress, skipping...');
+            return;
+        }
+        
+        isRefreshing = true;
+        
         // On n'affiche le loader que si on n'a absolument rien à afficher
         if (invoices.length === 0 && clients.length === 0) {
             setIsLoading(true);
@@ -136,6 +146,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             console.error("Erreur lors du rafraîchissement des données:", error);
         } finally {
             setIsLoading(false);
+            isRefreshing = false;
         }
     };
 

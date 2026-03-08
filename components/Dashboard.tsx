@@ -103,7 +103,7 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, clients }) => {
               Performance Annuelle
             </h3>
           </div>
-          <div className="flex-1 w-full" style={{ minHeight: '300px' }}>
+          <div className="flex-1 w-full" style={{ height: '350px' }}>
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={monthlyData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                 <defs>

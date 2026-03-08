@@ -85,26 +85,51 @@ export class DataSyncService {
     }
   }
 
-  // Initialize - returns cached data immediately, fetches fresh data in background
+  private initPromise: Promise<{ invoices: Invoice[]; clients: Client[]; products: Product[]; company: Company | null }> | null = null;
+
+  // Initialize - always fetches from Supabase, uses cache only as fallback
   async initializeWithCache(): Promise<{
     invoices: Invoice[];
     clients: Client[];
     products: Product[];
     company: Company | null;
   }> {
-    // Load from localStorage first
+    // If already initializing, return the existing promise
+    if (this.initPromise) {
+      console.log('Initialization already in progress, waiting...');
+      return this.initPromise;
+    }
+    
+    // Always try to fetch fresh data from Supabase
+    console.log('Fetching fresh data from Supabase...');
+    
+    // Create and store the promise to prevent duplicate requests
+    this.initPromise = this.fetchFromSupabase().finally(() => {
+      this.initPromise = null;
+    });
+    
+    return this.initPromise;
+  }
+
+  // Quick load - returns cached data immediately (for fast UI), then refreshes in background
+  async quickLoad(): Promise<{
+    invoices: Invoice[];
+    clients: Client[];
+    products: Product[];
+    company: Company | null;
+  }> {
     const cached = this.loadCacheFromStorage();
     
-    // If we have cached data, return it immediately
     if (cached) {
-      console.log('Using cached data from localStorage:', {
+      // Return cached data immediately
+      console.log('Quick load from cache:', {
         invoices: cached.invoices.length,
         clients: cached.clients.length,
         products: cached.products.length
       });
       
-      // Fetch fresh data in background (non-blocking)
-      this.refreshInBackground();
+      // Refresh in background (don't await)
+      this.initializeWithCache().catch(console.error);
       
       return {
         invoices: cached.invoices,
@@ -114,8 +139,8 @@ export class DataSyncService {
       };
     }
     
-    // No cache - must fetch from Supabase
-    return this.fetchFromSupabase();
+    // No cache, must fetch
+    return this.initializeWithCache();
   }
 
   // Fetch from Supabase with timeout
@@ -160,19 +185,28 @@ export class DataSyncService {
 
   // Refresh data in background without blocking UI
   private async refreshInBackground(): Promise<void> {
-    // Check if cache is still fresh (less than 1 minute old)
+    // Check if cache is still fresh (less than 5 minutes old)
     const cached = this.loadCacheFromStorage();
-    if (cached && (Date.now() - cached.timestamp < 60000)) {
+    if (cached && (Date.now() - cached.timestamp < 5 * 60 * 1000)) {
       return; // Cache is fresh, no need to refresh
     }
     
-    // Fetch fresh data in background
+    // Fetch fresh data in background (only if not already fetching)
+    if (this.syncStatus.isSyncing) {
+      return;
+    }
+    
+    this.syncStatus.isSyncing = true;
     this.fetchFromSupabase().then(data => {
+      this.syncStatus.isSyncing = false;
       // Notify callback with fresh data
       if (this.onSyncComplete) {
         this.onSyncComplete(data);
       }
-    }).catch(console.error);
+    }).catch(err => {
+      this.syncStatus.isSyncing = false;
+      console.error('Background refresh failed:', err);
+    });
   }
 
   // Perform background refresh of data from Supabase
