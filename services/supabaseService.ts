@@ -146,10 +146,10 @@ export const db = {
     },
 
     addProduct: async (product: Product): Promise<Product> => {
-        const { id, ...prodToInsert } = product;
+        const { id, name, description, price, unit } = product;
         const { data, error } = await supabase
             .from('products')
-            .insert([prodToInsert])
+            .insert([{ name, description, price, unit }])
             .select('id, name, description, price, unit')
             .single();
 
@@ -158,12 +158,12 @@ export const db = {
     },
 
     updateProduct: async (product: Product): Promise<void> => {
-        const { id, ...prodToUpdate } = product;
+        const { id, name, description, price, unit } = product;
         if (!id) throw new Error("Product ID is required for update");
 
         const { error } = await supabase
             .from('products')
-            .update(prodToUpdate)
+            .update({ name, description, price, unit })
             .eq('id', id);
 
         if (error) throw error;

@@ -79,36 +79,10 @@ export const initNetworkMonitoring = (
   };
 };
 
-// Auto-switch to local when offline, back to supabase when online
+// Keep for compatibility but no longer switches database mode
 export const initAutoSwitchMode = () => {
-  return initNetworkMonitoring(
-    () => {
-      // Going offline - switch to local mode
-      if (getDbMode() === 'supabase') {
-        console.log('Network offline - switching to local mode');
-        setDbMode('local');
-        window.location.reload();
-      }
-    },
-    () => {
-      // Coming back online - sync data then switch to supabase mode
-      if (getDbMode() === 'local') {
-        console.log('Network online - syncing local data to cloud...');
-        // Import dataSyncService dynamically to avoid circular dependency
-        import('./dataSyncService').then(({ dataSyncService }) => {
-          dataSyncService.syncLocalToSupabase().then((result) => {
-            if (result.success) {
-              console.log('Sync successful - switching to supabase mode');
-            } else {
-              console.warn('Sync completed with errors:', result.errors);
-            }
-            setDbMode('supabase');
-            window.location.reload();
-          });
-        });
-      }
-    }
-  );
+  // No-op - we always use Supabase now
+  return () => {};
 };
 
 // إنشاء العميل

@@ -1,12 +1,7 @@
 
 import { db as supabaseDb } from './supabaseService';
-import { localDb } from './localService';
-import { getDbMode } from './supabaseClient';
 
-// Get the current mode
-const mode = getDbMode();
+// Always use Supabase directly - no local fallback
+export const db = supabaseDb;
 
-// Use localDb if mode is 'local', otherwise use supabaseDb
-export const db = mode === 'local' ? localDb : supabaseDb;
-
-console.log(`Application is running in ${mode} mode`);
+console.log('Database initialized - using Supabase directly');

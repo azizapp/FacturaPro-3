@@ -45,6 +45,25 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const [theme, setTheme] = useState<'light' | 'dark'>('dark');
     const [user, setUser] = useState<User | null>(null);
 
+    // Setup sync callback to update data when background sync completes
+    useEffect(() => {
+        dataSyncService.setOnSyncComplete((freshData) => {
+            console.log('Sync complete callback received:', { 
+                invoices: freshData.invoices.length, 
+                clients: freshData.clients.length, 
+                products: freshData.products.length 
+            });
+            setInvoices(freshData.invoices);
+            setClients(freshData.clients);
+            setProducts(freshData.products);
+            if (freshData.company) setCompany(freshData.company);
+        });
+
+        return () => {
+            dataSyncService.setOnSyncComplete(null);
+        };
+    }, []);
+
     // Initialisation immédiate au montage
     useEffect(() => {
         // Initialize auto-switch mode for network monitoring
@@ -57,33 +76,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             setTheme(themeToApply);
             document.documentElement.classList.toggle('dark', themeToApply === 'dark');
 
-            // Charger les données du cache immédiatement pour un affichage instantané
-            const cachedData = dataSyncService.getCachedData();
-            if (cachedData.invoices.length > 0 || cachedData.clients.length > 0 || cachedData.products.length > 0) {
-                setInvoices(cachedData.invoices);
-                setClients(cachedData.clients);
-                setProducts(cachedData.products);
-                if (cachedData.company) setCompany(cachedData.company);
-                // Si on a des données, on peut déjà arrêter l'affichage du spinner principal
-                setIsLoading(false);
+            // Charger les données directement depuis Supabase
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session?.user) {
+                setUser({ id: session.user.id, email: session.user.email! });
             }
-
-            // Vérifier la session Supabase existante (seulement si non-local)
-            const mode = localStorage.getItem('DB_MODE') || 'supabase'; // Default is now supabase
-            if (mode === 'supabase') {
-                const { data: { session } } = await supabase.auth.getSession();
-                if (session?.user) {
-                    setUser({ id: session.user.id, email: session.user.email! });
-                }
-                // Charger les données في كل الحالات (مسجل دخول أو لا)
-                await refreshUserData();
-            } else {
-                // Mode local : On considère l'utilisateur comme connecté avec un compte invité si besoin
-                // ou on laisse user à null s'il n'y a pas d'auth locale
-                setUser({ id: 'local-user', email: 'vendeur@local.com' });
-                // Charger les données en mode local aussi
-                await refreshUserData();
-            }
+            // Charger les données dans tous les cas
+            await refreshUserData();
         };
 
         init();
@@ -152,19 +151,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         } catch (e) {
             console.error("Erreur de synchro facture:", e);
         }
-        dataSyncService.addInvoice(invoice);
     };
 
     const updateInvoice = (invoice: Invoice) => {
         setInvoices(prev => prev.map(inv => inv.id === invoice.id ? invoice : inv));
         db.updateInvoice(invoice).catch(e => console.error("Erreur de mise à jour facture:", e));
-        dataSyncService.updateInvoices([...invoices.filter(i => i.id !== invoice.id), invoice]);
     };
 
     const deleteInvoice = (id: string) => {
         setInvoices(prev => prev.filter(inv => inv.id !== id));
         db.deleteInvoice(id).catch(e => console.error("Erreur de suppression facture:", e));
-        dataSyncService.deleteInvoice(id);
     };
 
     const addClient = async (client: Client) => {
@@ -174,7 +170,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         } catch (e) {
             console.error("Erreur de synchro client:", e);
         }
-        dataSyncService.addClient(client);
     };
 
     const updateClient = (client: Client) => {
@@ -185,25 +180,21 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const deleteClient = (id: string) => {
         setClients(prev => prev.filter(c => c.id !== id));
         db.deleteClient(id).catch(e => console.error("Erreur de suppression client:", e));
-        dataSyncService.deleteClient(id);
     };
 
     const addProduct = (product: Product) => {
         setProducts(prev => [...prev, product]);
         db.addProduct(product).catch(e => console.error("Erreur de synchro produit:", e));
-        dataSyncService.addProduct(product);
     };
 
     const updateProduct = (product: Product) => {
         setProducts(prev => prev.map(p => p.id === product.id ? product : p));
         db.updateProduct(product).catch(e => console.error("Erreur de mise à jour produit:", e));
-        dataSyncService.updateProduct(product);
     };
 
     const deleteProduct = (id: string) => {
         setProducts(prev => prev.filter(p => p.id !== id));
         db.deleteProduct(id).catch(e => console.error("Erreur de suppression produit:", e));
-        dataSyncService.deleteProduct(id);
     };
 
     const updateCompany = (newCompany: Company) => {
@@ -216,7 +207,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 alert("Erreur de permission : Impossible de modifier les paramètres de l'entreprise. Vérifiez vos accès Supabase.");
             }
         });
-        dataSyncService.updateCompany(newCompany);
     };
 
     const addPayment = (invoiceId: string, payment: Payment) => {

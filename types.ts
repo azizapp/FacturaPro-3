@@ -61,9 +61,12 @@ export interface Client {
 export interface Product {
   id: string;
   name: string;
+  reference?: string;
+  category?: string;
   description: string;
   price: number;
   unit: string;
+  tvaRate?: number;
 }
 
 export interface InvoiceItem {

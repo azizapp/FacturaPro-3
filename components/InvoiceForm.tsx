@@ -76,6 +76,13 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ clients, products, company, i
     setItems(items.map(item => {
       if (item.id === id) {
         let newItem = { ...item, [field]: value };
+        // Validation: quantity must be at least 1
+        if (field === 'quantity') {
+          const qty = parseFloat(value);
+          if (isNaN(qty) || qty < 1) {
+            newItem.quantity = 1; // Force minimum of 1
+          }
+        }
         if (field === 'productId') {
           const product = products.find(p => p.id === value);
           if (product) { newItem.productName = product.name; newItem.price = product.price; }
@@ -93,6 +100,13 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ clients, products, company, i
     if (!clientId) return alert('Sélectionnez un client.');
     if (!invoiceNumber) return alert('Le numéro de facture est requis.');
 
+    // Filter out items with no product selected or quantity less than 1
+    const validItems = items.filter(item => item.productId && (item.quantity || 0) >= 1);
+    
+    if (validItems.length === 0) {
+      return alert('La facture doit contenir au moins un article avec un produit sélectionné et une quantité d\'au moins 1.');
+    }
+
     const invoice: Invoice = {
       ...initialInvoice,
       id: initialInvoice?.id || crypto.randomUUID(),
@@ -101,7 +115,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ clients, products, company, i
       dueDate: dueDate || invoiceDate,
       poNumber, 
       clientId, 
-      items: items as InvoiceItem[],
+      items: validItems as InvoiceItem[],
       status: initialInvoice?.status || InvoiceStatus.DRAFT,
       notes, 
       subtotal, 
@@ -171,7 +185,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ clients, products, company, i
           {items.map((item) => (
             <div key={item.id} className="grid grid-cols-12 gap-4 items-center p-4 bg-slate-50 dark:bg-slate-900/40 rounded-[15px] border border-slate-100 dark:border-white/5">
               <div className="col-span-4"><select value={item.productId || ''} onChange={(e) => handleItemChange(item.id!, 'productId', e.target.value)} className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/5 rounded-[8px] px-3 py-2 text-xs font-bold dark:text-white"><option value="">Produit...</option>{products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select></div>
-              <div className="col-span-2"><input type="number" value={item.quantity} onChange={(e) => handleItemChange(item.id!, 'quantity', parseFloat(e.target.value))} className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/5 rounded-[8px] px-3 py-2 text-xs text-center font-bold dark:text-white" /></div>
+              <div className="col-span-2"><input type="number" min="1" value={item.quantity} onChange={(e) => handleItemChange(item.id!, 'quantity', parseFloat(e.target.value))} className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/5 rounded-[8px] px-3 py-2 text-xs text-center font-bold dark:text-white" /></div>
               <div className="col-span-2"><input type="number" value={item.price} onChange={(e) => handleItemChange(item.id!, 'price', parseFloat(e.target.value))} className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/5 rounded-[8px] px-3 py-2 text-xs text-right font-bold dark:text-white" /></div>
               <div className="col-span-3 text-right font-bold text-xs dark:text-slate-200">{((item.price || 0) * (item.quantity || 0)).toLocaleString()} MAD</div>
               <div className="col-span-1 text-center"><button type="button" onClick={() => handleRemoveItem(item.id!)} className="text-rose-400"><i className="fas fa-trash-alt"></i></button></div>
