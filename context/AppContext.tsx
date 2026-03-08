@@ -74,15 +74,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 const { data: { session } } = await supabase.auth.getSession();
                 if (session?.user) {
                     setUser({ id: session.user.id, email: session.user.email! });
-                    await refreshUserData();
-                } else {
-                    setIsLoading(false);
                 }
+                // Charger les données في كل الحالات (مسجل دخول أو لا)
+                await refreshUserData();
             } else {
                 // Mode local : On considère l'utilisateur comme connecté avec un compte invité si besoin
                 // ou on laisse user à null s'il n'y a pas d'auth locale
                 setUser({ id: 'local-user', email: 'vendeur@local.com' });
-                setIsLoading(false);
+                // Charger les données en mode local aussi
+                await refreshUserData();
             }
         };
 
