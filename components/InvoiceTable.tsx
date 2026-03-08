@@ -33,9 +33,9 @@ const InvoiceTable: React.FC<InvoiceTableProps> = ({
   const [dateTo, setDateTo] = useState<string>('');
   const [showFilters, setShowFilters] = useState(false);
   
-  // Pagination State - Updated default items per page to 20
+  // Pagination State - Default items per page to 10
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(20);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const pageSizeOptions = [10, 20, 30, 50, 100, 200];
 
   const getClientName = (clientId: string) => {
@@ -148,7 +148,7 @@ const InvoiceTable: React.FC<InvoiceTableProps> = ({
   };
 
   return (
-    <div className="bg-white dark:bg-[#27354c] rounded-[20px] shadow-xl overflow-hidden border border-slate-200 dark:border-white/5 flex flex-col h-[calc(100vh-250px)] min-h-[500px]">
+    <div className="bg-white dark:bg-[#27354c] rounded-[20px] shadow-xl overflow-hidden border border-slate-200 dark:border-white/5 flex flex-col">
       
       {/* Search & Filters Toolbar */}
       <div className="p-4 border-b border-slate-100 dark:border-white/5 bg-slate-50/30 dark:bg-slate-900/40 flex flex-wrap items-center justify-between gap-4 shrink-0">
@@ -232,8 +232,8 @@ const InvoiceTable: React.FC<InvoiceTableProps> = ({
         </div>
       )}
 
-      {/* Table Container with Internal Scroll */}
-      <div className="flex-1 overflow-auto custom-scrollbar relative">
+      {/* Table Container */}
+      <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse min-w-[900px]">
           <thead className="sticky top-0 z-30 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-white/10 shadow-sm">
             <tr>
@@ -376,53 +376,44 @@ const InvoiceTable: React.FC<InvoiceTableProps> = ({
           </div>
         </div>
 
-        {totalPages > 1 && (
-          <div className="flex items-center space-x-1">
-            <button
-              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-              disabled={currentPage === 1}
-              className="w-10 h-10 rounded-xl flex items-center justify-center border border-slate-200 dark:border-white/10 text-slate-400 disabled:opacity-30 hover:bg-white dark:hover:bg-slate-800 transition-all active:scale-90"
-            >
-              <i className="fas fa-chevron-left text-[10px]"></i>
-            </button>
-            
-            <div className="flex items-center space-x-1 overflow-x-auto no-scrollbar max-w-[200px] sm:max-w-none">
-              {[...Array(totalPages)].map((_, i) => {
-                const page = i + 1;
-                if (
-                  page === 1 || 
-                  page === totalPages || 
-                  (page >= currentPage - 2 && page <= currentPage + 2)
-                ) {
-                  return (
-                    <button
-                      key={page}
-                      onClick={() => setCurrentPage(page)}
-                      className={`w-10 h-10 rounded-xl text-xs font-black transition-all active:scale-90 shrink-0 ${
-                        currentPage === page 
-                        ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' 
-                        : 'text-slate-500 hover:bg-white dark:hover:bg-slate-800 border border-transparent hover:border-slate-200 dark:hover:border-white/10'
-                      }`}
-                    >
-                      {page}
-                    </button>
-                  );
-                } else if (page === currentPage - 3 || page === currentPage + 3) {
-                  return <span key={page} className="text-slate-300 dark:text-slate-700 text-xs px-1">...</span>;
-                }
-                return null;
-              })}
-            </div>
+        {/* Pagination - Always visible */}
+        <div className="flex items-center space-x-1">
+          {/* Page précédente */}
+          <button
+            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+            disabled={currentPage === 1}
+            className="w-10 h-10 rounded-lg flex items-center justify-center border border-slate-200 dark:border-white/10 text-slate-400 disabled:opacity-30 hover:bg-white dark:hover:bg-slate-800 transition-all"
+          >
+            <i className="fas fa-chevron-left text-xs"></i>
+          </button>
+          
+          {/* Numéros de page */}
+          {[...Array(totalPages)].map((_, i) => {
+            const page = i + 1;
+            return (
+              <button
+                key={page}
+                onClick={() => setCurrentPage(page)}
+                className={`w-10 h-10 rounded-lg text-sm font-medium transition-all ${
+                  currentPage === page 
+                  ? 'bg-white dark:bg-slate-800 text-indigo-600 border-2 border-indigo-600' 
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800 border border-slate-200 dark:border-white/10'
+                }`}
+              >
+                {page}
+              </button>
+            );
+          })}
 
-            <button
-              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-              disabled={currentPage === totalPages}
-              className="w-10 h-10 rounded-xl flex items-center justify-center border border-slate-200 dark:border-white/10 text-slate-400 disabled:opacity-30 hover:bg-white dark:hover:bg-slate-800 transition-all active:scale-90"
-            >
-              <i className="fas fa-chevron-right text-[10px]"></i>
-            </button>
-          </div>
-        )}
+          {/* Page suivante */}
+          <button
+            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+            disabled={currentPage === totalPages}
+            className="w-10 h-10 rounded-lg flex items-center justify-center border border-slate-200 dark:border-white/10 text-slate-400 disabled:opacity-30 hover:bg-white dark:hover:bg-slate-800 transition-all"
+          >
+            <i className="fas fa-chevron-right text-xs"></i>
+          </button>
+        </div>
       </div>
     </div>
   );

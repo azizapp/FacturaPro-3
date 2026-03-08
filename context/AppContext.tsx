@@ -129,9 +129,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         try {
             // Synchronisation en arrière-plan via le service de sync
             const freshData = await dataSyncService.initializeWithCache();
+            console.log('Data received in refreshUserData:', {
+                invoices: freshData.invoices.length,
+                clients: freshData.clients.length,
+                products: freshData.products.length
+            });
             setInvoices(freshData.invoices);
             setClients(freshData.clients);
             setProducts(freshData.products);
+            console.log('State updated with new data');
 
             if (freshData.company) {
                 setCompany(freshData.company);

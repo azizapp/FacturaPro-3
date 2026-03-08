@@ -11,6 +11,7 @@ const Settings: React.FC<SettingsProps> = ({ company, onUpdate }) => {
   const [formData, setFormData] = useState<Company>(company);
   const logoInputRef = useRef<HTMLInputElement>(null);
   const signatureInputRef = useRef<HTMLInputElement>(null);
+  const iconsInputRef = useRef<HTMLInputElement>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,6 +50,15 @@ const Settings: React.FC<SettingsProps> = ({ company, onUpdate }) => {
                 <input type="file" ref={signatureInputRef} className="hidden" onChange={handleFileChange('signature')} accept="image/*" />
               </div>
               <p className="text-[9px] text-slate-400 font-medium italic text-center">Utilisez de préférence une image sur fond blanc (PNG/JPG).</p>
+            </div>
+
+            <div className="bg-white dark:bg-[#27354c] p-8 rounded-[15px] shadow-sm border border-slate-200 dark:border-white/5 space-y-8">
+              <h4 className="text-[11px] font-black text-teal-600 dark:text-teal-400 uppercase border-b border-slate-100 dark:border-white/5 pb-2">Icons</h4>
+              <div onClick={() => iconsInputRef.current?.click()} className="h-32 rounded-[12px] border-2 border-dashed border-slate-200 dark:border-white/10 flex items-center justify-center cursor-pointer bg-slate-50 dark:bg-slate-900/30 overflow-hidden">
+                {formData.icons ? <img src={formData.icons} className="h-full object-contain" alt="Icons preview" /> : <span className="text-xs text-slate-400">Cliquez pour ajouter des icons</span>}
+                <input type="file" ref={iconsInputRef} className="hidden" onChange={handleFileChange('icons')} accept="image/*" />
+              </div>
+              <p className="text-[9px] text-slate-400 font-medium italic text-center">Utilisez de préférence une image sur fond transparent (PNG).</p>
             </div>
           </div>
 

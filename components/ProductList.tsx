@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Product } from '../types';
 
 interface ProductListProps {
@@ -10,6 +10,25 @@ interface ProductListProps {
 }
 
 const ProductList: React.FC<ProductListProps> = ({ products, onAddProduct, onEditProduct, onDeleteProduct }) => {
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const pageSizeOptions = [10, 20, 50, 100];
+
+  // Reset pagination when products change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [products.length]);
+
+  // Calculate pagination
+  const totalPages = Math.ceil(products.length / itemsPerPage);
+  const paginatedProducts = products.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const startItem = products.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0;
+  const endItem = Math.min(currentPage * itemsPerPage, products.length);
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex justify-between items-center">
@@ -26,8 +45,8 @@ const ProductList: React.FC<ProductListProps> = ({ products, onAddProduct, onEdi
         </button>
       </div>
 
-      <div className="bg-white dark:bg-[#27354c] rounded-[20px] shadow-xl border border-slate-200 dark:border-white/5 overflow-hidden flex flex-col h-[calc(100vh-250px)]">
-        <div className="flex-1 overflow-auto custom-scrollbar relative">
+      <div className="bg-white dark:bg-[#27354c] rounded-[20px] shadow-xl border border-slate-200 dark:border-white/5 overflow-hidden flex flex-col">
+        <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[700px]">
             <thead className="sticky top-0 z-20 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-white/10 shadow-sm">
               <tr>
@@ -39,7 +58,7 @@ const ProductList: React.FC<ProductListProps> = ({ products, onAddProduct, onEdi
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-white/5">
-              {products.map((product) => (
+              {paginatedProducts.length > 0 ? paginatedProducts.map((product) => (
                 <tr key={product.id} className="hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors group">
                   <td className="px-6 py-4">
                     <div className="flex items-center space-x-3">
@@ -79,8 +98,7 @@ const ProductList: React.FC<ProductListProps> = ({ products, onAddProduct, onEdi
                     </div>
                   </td>
                 </tr>
-              ))}
-              {products.length === 0 && (
+              )) : (
                 <tr>
                   <td colSpan={5} className="py-24 text-center text-slate-400 italic text-sm">
                     <div className="flex flex-col items-center justify-center opacity-30">
@@ -93,6 +111,78 @@ const ProductList: React.FC<ProductListProps> = ({ products, onAddProduct, onEdi
             </tbody>
           </table>
         </div>
+
+        {/* Pagination Footer */}
+        {products.length > 0 && (
+          <div className="px-6 py-4 bg-slate-50 dark:bg-slate-900/60 border-t border-slate-100 dark:border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4 shrink-0">
+            <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-8">
+              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap">
+                Affichage de <span className="text-slate-800 dark:text-slate-200">
+                  {startItem}
+                </span> à <span className="text-slate-800 dark:text-slate-200">
+                  {endItem}
+                </span> sur <span className="text-indigo-600 dark:text-indigo-400 font-black">{products.length}</span> produits
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <label className="text-[9px] font-black uppercase text-slate-400 tracking-tighter whitespace-nowrap">Lignes par page:</label>
+                <select 
+                  value={itemsPerPage}
+                  onChange={(e) => {
+                    setItemsPerPage(Number(e.target.value));
+                    setCurrentPage(1);
+                  }}
+                  className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-lg text-[10px] font-black px-2 py-1 outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all dark:text-white cursor-pointer"
+                >
+                  {pageSizeOptions.map(option => (
+                    <option key={option} value={option}>{option}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Pagination - Always visible */}
+            <div className="flex items-center space-x-1">
+              {/* Page précédente */}
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                className="w-10 h-10 rounded-lg flex items-center justify-center border border-slate-200 dark:border-white/10 text-slate-400 disabled:opacity-30 hover:bg-white dark:hover:bg-slate-800 transition-all"
+                title="Page précédente"
+              >
+                <i className="fas fa-chevron-left text-xs"></i>
+              </button>
+              
+              {/* Numéros de page */}
+              {[...Array(totalPages)].map((_, i) => {
+                const page = i + 1;
+                return (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    className={`w-10 h-10 rounded-lg text-sm font-medium transition-all ${
+                      currentPage === page 
+                      ? 'bg-white dark:bg-slate-800 text-indigo-600 border-2 border-indigo-600' 
+                      : 'text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800 border border-slate-200 dark:border-white/10'
+                    }`}
+                  >
+                    {page}
+                  </button>
+                );
+              })}
+
+              {/* Page suivante */}
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages}
+                className="w-10 h-10 rounded-lg flex items-center justify-center border border-slate-200 dark:border-white/10 text-slate-400 disabled:opacity-30 hover:bg-white dark:hover:bg-slate-800 transition-all"
+                title="Page suivante"
+              >
+                <i className="fas fa-chevron-right text-xs"></i>
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

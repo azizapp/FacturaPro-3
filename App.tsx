@@ -116,9 +116,22 @@ const App: React.FC = () => {
           <ClientForm
             initialClient={clients.find(c => c.id === selectedClientId)}
             onSubmit={(client) => {
-              if (selectedClientId) updateClient(client);
-              else addClient(client);
-              setActiveView('clients');
+              if (selectedClientId) {
+                updateClient(client);
+                setActiveView('clients');
+              } else {
+                // Check if client with same name and city already exists
+                const existingClient = clients.find(c => 
+                  c.name.toLowerCase() === client.name.toLowerCase() && 
+                  c.city.toLowerCase() === client.city.toLowerCase()
+                );
+                if (existingClient) {
+                  alert(`Ce client existe déjà : ${existingClient.name} (${existingClient.city})`);
+                  return;
+                }
+                addClient(client);
+                setActiveView('clients');
+              }
             }}
             onCancel={() => setActiveView('clients')}
             companyEmail={company?.email}
@@ -145,9 +158,22 @@ const App: React.FC = () => {
           <ProductForm
             initialProduct={products.find(p => p.id === selectedProductId)}
             onSubmit={(product) => {
-              if (selectedProductId) updateProduct(product);
-              else addProduct(product);
-              setActiveView('products');
+              if (selectedProductId) {
+                updateProduct(product);
+                setActiveView('products');
+              } else {
+                // Check if product with same name or reference already exists
+                const existingProduct = products.find(p => 
+                  p.name.toLowerCase() === product.name.toLowerCase() || 
+                  (product.reference && p.reference === product.reference)
+                );
+                if (existingProduct) {
+                  alert(`Ce produit existe déjà : ${existingProduct.name}`);
+                  return;
+                }
+                addProduct(product);
+                setActiveView('products');
+              }
             }}
             onCancel={() => setActiveView('products')}
           />
@@ -157,14 +183,18 @@ const App: React.FC = () => {
   };
 
   if (!user) {
-    return <Login onLogin={refreshUserData} />;
+    return <Login onLogin={refreshUserData} company={company} />;
   }
 
   return (
     <div className={`flex h-screen overflow-hidden font-sans text-[13px] ${theme === 'dark' ? 'bg-slate-900 text-slate-100' : 'bg-slate-50 text-slate-900'}`}>
       <div className={`${sidebarCollapsed ? 'w-20' : 'w-64'} ${theme === 'dark' ? 'bg-slate-800' : 'bg-slate-900'} text-white flex flex-col shrink-0 transition-all duration-300 ease-in-out`}>
         <div className="p-6 border-b border-slate-800 flex items-center space-x-3">
-          <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center"><i className="fas fa-file-invoice text-xl"></i></div>
+          {company?.icons ? (
+            <img src={company.icons} alt="Company Icon" className="w-10 h-10 rounded-xl object-contain" />
+          ) : (
+            <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center"><i className="fas fa-file-invoice text-xl"></i></div>
+          )}
           {!sidebarCollapsed && <span className="text-xl font-black tracking-tighter italic">FACTURAPRO</span>}
         </div>
         <nav className="flex-1 p-4 space-y-2 overflow-y-auto custom-scrollbar">

@@ -24,22 +24,6 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ invoices, clients, company, o
   const [selectedClientId, setSelectedClientId] = useState<string>(initialClientId || activeClientsWithInvoices[0]?.id || '');
   const [activeTab, setActiveTab] = useState<string>("Vue d'ensemble");
 
-  // Pagination state for Factures tab
-  const [currentInvoicePage, setCurrentInvoicePage] = useState(1);
-  const [invoiceItemsPerPage, setInvoiceItemsPerPage] = useState(10);
-
-  // Pagination state for Paiements tab
-  const [currentPaymentPage, setCurrentPaymentPage] = useState(1);
-  const [paymentItemsPerPage, setPaymentItemsPerPage] = useState(10);
-
-  const itemsPerPageOptions = [10, 20, 50, 100];
-
-  // Reset pagination when tab changes
-  useEffect(() => {
-    setCurrentInvoicePage(1);
-    setCurrentPaymentPage(1);
-  }, [activeTab]);
-
   useEffect(() => {
     if (initialClientId) {
       setSelectedClientId(initialClientId);
@@ -58,20 +42,6 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ invoices, clients, company, o
       originalInvoiceId: inv.id
     }))
   ).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-
-  // Pagination calculations for Factures
-  const totalInvoicePages = Math.ceil(clientInvoices.length / invoiceItemsPerPage);
-  const paginatedInvoices = clientInvoices.slice(
-    (currentInvoicePage - 1) * invoiceItemsPerPage,
-    currentInvoicePage * invoiceItemsPerPage
-  );
-
-  // Pagination calculations for Paiements
-  const totalPaymentPages = Math.ceil(clientPayments.length / paymentItemsPerPage);
-  const paginatedPayments = clientPayments.slice(
-    (currentPaymentPage - 1) * paymentItemsPerPage,
-    currentPaymentPage * paymentItemsPerPage
-  );
 
   const operations = [
     ...clientInvoices.map(inv => ({
@@ -402,196 +372,33 @@ const InvoiceList: React.FC<InvoiceListProps> = ({ invoices, clients, company, o
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-50 dark:divide-white/5">
-                        {activeTab === 'Factures' ? (
-                          paginatedInvoices.length > 0 ? (
-                            paginatedInvoices.map((inv) => {
-                              const paid = (inv.payments || []).reduce((sum, p) => sum + p.amount, 0);
-                              const pieces = inv.items.reduce((sum, item) => sum + item.quantity, 0);
-                              return (
-                                <tr key={inv.id} className="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
-                                  <td className="px-6 py-4 text-xs text-slate-500 dark:text-slate-400 text-left">{new Date(inv.date).toLocaleDateString('fr-FR')}</td>
-                                  <td className="px-6 py-4 text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase text-left">{inv.number}</td>
-                                  <td className="px-6 py-4 text-center text-xs font-bold text-slate-600 dark:text-slate-300">{pieces}</td>
-                                  <td className="px-6 py-4 text-right text-xs font-bold text-slate-800 dark:text-white">{inv.grandTotal.toLocaleString()}</td>
-                                  <td className={`px-6 py-4 text-right text-xs font-bold ${inv.grandTotal - paid > 0 ? 'text-rose-500' : 'text-slate-200 dark:text-slate-700'}`}>
-                                    {(inv.grandTotal - paid).toLocaleString()}
-                                  </td>
-                                </tr>
-                              );
-                            })
-                          ) : (
-                            <tr>
-                              <td colSpan={5} className="px-6 py-8 text-center text-slate-400 text-sm">
-                                Aucune facture à afficher
+                        {activeTab === 'Factures' ? clientInvoices.map((inv) => {
+                          const paid = (inv.payments || []).reduce((sum, p) => sum + p.amount, 0);
+                          const pieces = inv.items.reduce((sum, item) => sum + item.quantity, 0);
+                          return (
+                            <tr key={inv.id} className="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+                              <td className="px-6 py-4 text-xs text-slate-500 dark:text-slate-400 text-left">{new Date(inv.date).toLocaleDateString('fr-FR')}</td>
+                              <td className="px-6 py-4 text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase text-left">{inv.number}</td>
+                              <td className="px-6 py-4 text-center text-xs font-bold text-slate-600 dark:text-slate-300">{pieces}</td>
+                              <td className="px-6 py-4 text-right text-xs font-bold text-slate-800 dark:text-white">{inv.grandTotal.toLocaleString()}</td>
+                              <td className={`px-6 py-4 text-right text-xs font-bold ${inv.grandTotal - paid > 0 ? 'text-rose-500' : 'text-slate-200 dark:text-slate-700'}`}>
+                                {(inv.grandTotal - paid).toLocaleString()}
                               </td>
                             </tr>
-                          )
-                        ) : (
-                          paginatedPayments.length > 0 ? (
-                            paginatedPayments.map((p) => (
-                              <tr key={p.id} className="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
-                                <td className="px-6 py-4 text-xs text-slate-500 dark:text-slate-400 text-left">{new Date(p.date).toLocaleDateString('fr-FR')}</td>
-                                <td className="px-6 py-4 text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase text-left">{p.invoiceNumber}</td>
-                                <td className="px-6 py-4 text-xs font-medium text-slate-600 dark:text-slate-300 uppercase text-left">{p.method}</td>
-                                <td className="px-6 py-4 text-right text-xs font-bold text-emerald-600">+{p.amount.toLocaleString()}</td>
-                                <td className="px-6 py-4 text-center">
-                                  <button onClick={() => handleDelete(p.originalInvoiceId, p.id)} className="text-rose-400 hover:text-rose-600"><i className="fas fa-trash-alt"></i></button>
-                                </td>
-                              </tr>
-                            ))
-                          ) : (
-                            <tr>
-                              <td colSpan={5} className="px-6 py-8 text-center text-slate-400 text-sm">
-                                Aucun paiement à afficher
-                              </td>
-                            </tr>
-                          )
-                        )}
+                          );
+                        }) : clientPayments.map((p) => (
+                          <tr key={p.id} className="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+                            <td className="px-6 py-4 text-xs text-slate-500 dark:text-slate-400 text-left">{new Date(p.date).toLocaleDateString('fr-FR')}</td>
+                            <td className="px-6 py-4 text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase text-left">{p.invoiceNumber}</td>
+                            <td className="px-6 py-4 text-xs font-medium text-slate-600 dark:text-slate-300 uppercase text-left">{p.method}</td>
+                            <td className="px-6 py-4 text-right text-xs font-bold text-emerald-600">+{p.amount.toLocaleString()}</td>
+                            <td className="px-6 py-4 text-center">
+                              <button onClick={() => handleDelete(p.originalInvoiceId, p.id)} className="text-rose-400 hover:text-rose-600"><i className="fas fa-trash-alt"></i></button>
+                            </td>
+                          </tr>
+                        ))}
                       </tbody>
                     </table>
-
-                    {/* Pagination Footer */}
-                    {activeTab === 'Factures' && clientInvoices.length > 0 && (
-                      <div className="px-6 py-4 bg-slate-50 dark:bg-slate-900/60 border-t border-slate-100 dark:border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4 shrink-0">
-                        <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-8">
-                          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap">
-                            Affichage de <span className="text-slate-800 dark:text-slate-200">
-                              {(currentInvoicePage - 1) * invoiceItemsPerPage + 1}
-                            </span> à <span className="text-slate-800 dark:text-slate-200">
-                              {Math.min(currentInvoicePage * invoiceItemsPerPage, clientInvoices.length)}
-                            </span> sur <span className="text-indigo-600 dark:text-indigo-400 font-black">{clientInvoices.length}</span> factures
-                          </div>
-
-                          <div className="flex items-center space-x-2">
-                            <label className="text-[9px] font-black uppercase text-slate-400 tracking-tighter whitespace-nowrap">Lignes par page:</label>
-                            <select 
-                              value={invoiceItemsPerPage}
-                              onChange={(e) => {
-                                setInvoiceItemsPerPage(Number(e.target.value));
-                                setCurrentInvoicePage(1);
-                              }}
-                              className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-lg text-[10px] font-black px-2 py-1 outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all dark:text-white cursor-pointer"
-                            >
-                              {itemsPerPageOptions.map(option => (
-                                <option key={option} value={option}>{option}</option>
-                              ))}
-                            </select>
-                          </div>
-                        </div>
-
-                        {/* Pagination - Always visible */}
-                        <div className="flex items-center space-x-1">
-                          {/* Page précédente */}
-                          <button
-                            onClick={() => setCurrentInvoicePage(prev => Math.max(1, prev - 1))}
-                            disabled={currentInvoicePage === 1}
-                            className="w-10 h-10 rounded-lg flex items-center justify-center border border-slate-200 dark:border-white/10 text-slate-400 disabled:opacity-30 hover:bg-white dark:hover:bg-slate-800 transition-all"
-                            title="Page précédente"
-                          >
-                            <i className="fas fa-chevron-left text-xs"></i>
-                          </button>
-                          
-                          {/* Numéros de page */}
-                          {[...Array(totalInvoicePages)].map((_, i) => {
-                            const page = i + 1;
-                            return (
-                              <button
-                                key={page}
-                                onClick={() => setCurrentInvoicePage(page)}
-                                className={`w-10 h-10 rounded-lg text-sm font-medium transition-all ${
-                                  currentInvoicePage === page 
-                                  ? 'bg-white dark:bg-slate-800 text-indigo-600 border-2 border-indigo-600' 
-                                  : 'text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800 border border-slate-200 dark:border-white/10'
-                                }`}
-                              >
-                                {page}
-                              </button>
-                            );
-                          })}
-
-                          {/* Page suivante */}
-                          <button
-                            onClick={() => setCurrentInvoicePage(prev => Math.min(totalInvoicePages, prev + 1))}
-                            disabled={currentInvoicePage === totalInvoicePages}
-                            className="w-10 h-10 rounded-lg flex items-center justify-center border border-slate-200 dark:border-white/10 text-slate-400 disabled:opacity-30 hover:bg-white dark:hover:bg-slate-800 transition-all"
-                            title="Page suivante"
-                          >
-                            <i className="fas fa-chevron-right text-xs"></i>
-                          </button>
-                        </div>
-                      </div>
-                    )}
-
-                    {activeTab === 'Paiements' && clientPayments.length > 0 && (
-                      <div className="px-6 py-4 bg-slate-50 dark:bg-slate-900/60 border-t border-slate-100 dark:border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4 shrink-0">
-                        <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-8">
-                          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap">
-                            Affichage de <span className="text-slate-800 dark:text-slate-200">
-                              {(currentPaymentPage - 1) * paymentItemsPerPage + 1}
-                            </span> à <span className="text-slate-800 dark:text-slate-200">
-                              {Math.min(currentPaymentPage * paymentItemsPerPage, clientPayments.length)}
-                            </span> sur <span className="text-indigo-600 dark:text-indigo-400 font-black">{clientPayments.length}</span> paiements
-                          </div>
-
-                          <div className="flex items-center space-x-2">
-                            <label className="text-[9px] font-black uppercase text-slate-400 tracking-tighter whitespace-nowrap">Lignes par page:</label>
-                            <select 
-                              value={paymentItemsPerPage}
-                              onChange={(e) => {
-                                setPaymentItemsPerPage(Number(e.target.value));
-                                setCurrentPaymentPage(1);
-                              }}
-                              className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-lg text-[10px] font-black px-2 py-1 outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all dark:text-white cursor-pointer"
-                            >
-                              {itemsPerPageOptions.map(option => (
-                                <option key={option} value={option}>{option}</option>
-                              ))}
-                            </select>
-                          </div>
-                        </div>
-
-                        {/* Pagination - Always visible */}
-                        <div className="flex items-center space-x-1">
-                          {/* Page précédente */}
-                          <button
-                            onClick={() => setCurrentPaymentPage(prev => Math.max(1, prev - 1))}
-                            disabled={currentPaymentPage === 1}
-                            className="w-10 h-10 rounded-lg flex items-center justify-center border border-slate-200 dark:border-white/10 text-slate-400 disabled:opacity-30 hover:bg-white dark:hover:bg-slate-800 transition-all"
-                            title="Page précédente"
-                          >
-                            <i className="fas fa-chevron-left text-xs"></i>
-                          </button>
-                          
-                          {/* Numéros de page */}
-                          {[...Array(totalPaymentPages)].map((_, i) => {
-                            const page = i + 1;
-                            return (
-                              <button
-                                key={page}
-                                onClick={() => setCurrentPaymentPage(page)}
-                                className={`w-10 h-10 rounded-lg text-sm font-medium transition-all ${
-                                  currentPaymentPage === page 
-                                  ? 'bg-white dark:bg-slate-800 text-indigo-600 border-2 border-indigo-600' 
-                                  : 'text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800 border border-slate-200 dark:border-white/10'
-                                }`}
-                              >
-                                {page}
-                              </button>
-                            );
-                          })}
-
-                          {/* Page suivante */}
-                          <button
-                            onClick={() => setCurrentPaymentPage(prev => Math.min(totalPaymentPages, prev + 1))}
-                            disabled={currentPaymentPage === totalPaymentPages}
-                            className="w-10 h-10 rounded-lg flex items-center justify-center border border-slate-200 dark:border-white/10 text-slate-400 disabled:opacity-30 hover:bg-white dark:hover:bg-slate-800 transition-all"
-                            title="Page suivante"
-                          >
-                            <i className="fas fa-chevron-right text-xs"></i>
-                          </button>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 </div>
               )}

@@ -103,7 +103,8 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, clients }) => {
               Performance Annuelle
             </h3>
           </div>
-          <div className="flex-1 w-full" style={{ height: '350px' }}>
+          <div className="flex-1 w-full relative" style={{ height: '350px' }}>
+            {invoices.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={monthlyData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                 <defs>
@@ -128,6 +129,11 @@ const Dashboard: React.FC<DashboardProps> = ({ invoices, clients }) => {
                 <Area type="monotone" dataKey="amount" stroke="#6366f1" strokeWidth={3} fill="url(#colorAmt)" animationDuration={1500} />
               </AreaChart>
             </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-full text-slate-400 text-sm">
+                Aucune donnée de facturation disponible
+              </div>
+            )}
           </div>
         </div>
 
