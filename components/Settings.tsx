@@ -1,7 +1,7 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Company } from '../types';
-import { getDbMode, switchAndReload, isSupabaseConfigured } from '../services/supabaseClient';
+import { getDbMode, switchAndReload, isSupabaseConfigured, getNetworkStatus, initAutoSwitchMode } from '../services/supabaseClient';
 import { migrateLocalToSupabase, MigrationProgress } from '../services/migrationService';
 
 interface SettingsProps {
@@ -18,6 +18,22 @@ const Settings: React.FC<SettingsProps> = ({ company, onUpdate }) => {
   const [migrationProgress, setMigrationProgress] = useState<MigrationProgress | null>(null);
   const [migrationDone, setMigrationDone] = useState(false);
   const [migrationErrors, setMigrationErrors] = useState<string[]>([]);
+  const [isOnline, setIsOnline] = useState(getNetworkStatus());
+
+  // Initialize network monitoring
+  useEffect(() => {
+    const cleanup = initAutoSwitchMode();
+    
+    // Update network status periodically
+    const interval = setInterval(() => {
+      setIsOnline(getNetworkStatus());
+    }, 1000);
+
+    return () => {
+      cleanup();
+      clearInterval(interval);
+    };
+  }, []);
 
   const handleMigrateAndSwitch = async () => {
     if (!confirm('Voulez-vous migrer toutes les donnees locales vers Supabase avant de basculer ?')) return;
@@ -131,6 +147,14 @@ const Settings: React.FC<SettingsProps> = ({ company, onUpdate }) => {
             <div className="bg-white dark:bg-[#27354c] p-8 rounded-[15px] shadow-sm border border-slate-200 dark:border-white/5 space-y-6">
               <h4 className="text-[11px] font-black text-rose-500 dark:text-rose-400 uppercase border-b border-slate-100 dark:border-white/5 pb-2">Source des Données</h4>
 
+              {/* Network Status */}
+              <div className={`flex items-center gap-3 p-3 rounded-[8px] ${isOnline ? 'bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800' : 'bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800'}`}>
+                <div className={`w-2 h-2 rounded-full ${isOnline ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`}></div>
+                <p className={`text-[10px] font-bold ${isOnline ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-400'}`}>
+                  {isOnline ? '🌐 Connecté - Synchronisation active' : '⚠️ Hors ligne - Mode local activé'}
+                </p>
+              </div>
+
               {/* Mode indicator + button */}
               <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-900/30 rounded-[12px] border border-slate-200 dark:border-white/5">
                 <div>
@@ -139,15 +163,18 @@ const Settings: React.FC<SettingsProps> = ({ company, onUpdate }) => {
                   </p>
                   <p className="text-[10px] text-slate-400 mt-1">
                     {getDbMode() === 'local'
-                      ? "Données stockées dans votre navigateur (LocalStorage)."
-                      : "Données synchronisées avec Supabase Cloud."}
+                      ? "Données stockées localement (mode hors ligne)."
+                      : "Données synchronisées avec Supabase Cloud (par défaut)."}
+                  </p>
+                  <p className="text-[9px] text-slate-500 mt-1 italic">
+                    Le système bascule automatiquement selon la connexion
                   </p>
                 </div>
                 {getDbMode() === 'local' ? (
                   <button
                     type="button"
                     onClick={handleMigrateAndSwitch}
-                    disabled={isMigrating}
+                    disabled={isMigrating || !isOnline}
                     className="px-4 py-2 rounded-[8px] text-[10px] font-black uppercase bg-indigo-600 text-white hover:bg-indigo-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                   >
                     {isMigrating ? <><span className="animate-spin inline-block w-3 h-3 border-2 border-white/30 border-t-white rounded-full"></span> Migration...</> : '☁️ Migrer & Passer en Cloud'}
@@ -156,7 +183,8 @@ const Settings: React.FC<SettingsProps> = ({ company, onUpdate }) => {
                   <button
                     type="button"
                     onClick={() => switchAndReload('local')}
-                    className="px-4 py-2 rounded-[8px] text-[10px] font-black uppercase bg-slate-200 text-slate-600 hover:bg-slate-300 dark:bg-slate-800 dark:text-slate-400 transition-all"
+                    disabled={!isOnline}
+                    className="px-4 py-2 rounded-[8px] text-[10px] font-black uppercase bg-slate-200 text-slate-600 hover:bg-slate-300 dark:bg-slate-800 dark:text-slate-400 transition-all disabled:opacity-50"
                   >
                     💾 Passer en Mode Local
                   </button>

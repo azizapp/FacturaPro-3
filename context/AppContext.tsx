@@ -3,7 +3,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { Invoice, Client, Product, Company, Payment, InvoiceStatus, User } from '../types';
 import { db } from '../services/database';
 import { dataSyncService } from '../services/dataSyncService';
-import { supabase } from '../services/supabaseClient';
+import { supabase, initAutoSwitchMode } from '../services/supabaseClient';
 
 interface AppContextType {
     invoices: Invoice[];
@@ -42,18 +42,20 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const [products, setProducts] = useState<Product[]>([]);
     const [company, setCompany] = useState<Company | null>(null);
     const [isLoading, setIsLoading] = useState<boolean>(true);
-    const [theme, setTheme] = useState<'light' | 'dark'>('light');
+    const [theme, setTheme] = useState<'light' | 'dark'>('dark');
     const [user, setUser] = useState<User | null>(null);
 
     // Initialisation immédiate au montage
     useEffect(() => {
+        // Initialize auto-switch mode for network monitoring
+        const cleanupAutoSwitch = initAutoSwitchMode();
+
         const init = async () => {
-            // Charger le thème
+            // Charger le thème (dark par défaut)
             const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
-            if (savedTheme) {
-                setTheme(savedTheme);
-                document.documentElement.classList.toggle('dark', savedTheme === 'dark');
-            }
+            const themeToApply = savedTheme || 'dark';
+            setTheme(themeToApply);
+            document.documentElement.classList.toggle('dark', themeToApply === 'dark');
 
             // Charger les données du cache immédiatement pour un affichage instantané
             const cachedData = dataSyncService.getCachedData();
@@ -67,7 +69,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             }
 
             // Vérifier la session Supabase existante (seulement si non-local)
-            const mode = localStorage.getItem('DB_MODE') || 'local';
+            const mode = localStorage.getItem('DB_MODE') || 'supabase'; // Default is now supabase
             if (mode === 'supabase') {
                 const { data: { session } } = await supabase.auth.getSession();
                 if (session?.user) {
@@ -96,7 +98,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             }
         });
 
-        return () => subscription.unsubscribe();
+        return () => {
+            subscription.unsubscribe();
+            cleanupAutoSwitch();
+        };
     }, []);
 
     const toggleTheme = () => {

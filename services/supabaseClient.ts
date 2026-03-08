@@ -30,11 +30,11 @@ export const isSupabaseConfigured = () => {
 };
 
 // تحديد وضع قاعدة البيانات (محلي أو سحابي)
-// الوضع الافتراضي دائماً هو 'local' ما لم يختر المستخدم 'supabase' صراحةً
+// الوضع الافتراضي هو 'supabase' (قاعدة البيانات الخارجية)
 export const getDbMode = (): 'local' | 'supabase' => {
   const savedMode = window.localStorage.getItem('DB_MODE');
-  if (savedMode === 'supabase') return 'supabase';
-  return 'local'; // الافتراضي دائماً محلي
+  if (savedMode === 'local') return 'local';
+  return 'supabase'; // الافتراضي الآن هو supabase
 };
 
 export const setDbMode = (mode: 'local' | 'supabase') => {
@@ -44,6 +44,71 @@ export const setDbMode = (mode: 'local' | 'supabase') => {
 export const switchAndReload = (mode: 'local' | 'supabase') => {
   setDbMode(mode);
   window.location.reload();
+};
+
+// Network status monitoring
+let isOnline = navigator.onLine;
+let wasOnline = navigator.onLine;
+
+export const getNetworkStatus = (): boolean => isOnline;
+
+export const initNetworkMonitoring = (
+  onOffline: () => void,
+  onOnline: () => void
+) => {
+  const handleOnline = () => {
+    wasOnline = isOnline;
+    isOnline = true;
+    if (!wasOnline && isOnline) {
+      onOnline();
+    }
+  };
+
+  const handleOffline = () => {
+    wasOnline = isOnline;
+    isOnline = false;
+    onOffline();
+  };
+
+  window.addEventListener('online', handleOnline);
+  window.addEventListener('offline', handleOffline);
+
+  return () => {
+    window.removeEventListener('online', handleOnline);
+    window.removeEventListener('offline', handleOffline);
+  };
+};
+
+// Auto-switch to local when offline, back to supabase when online
+export const initAutoSwitchMode = () => {
+  return initNetworkMonitoring(
+    () => {
+      // Going offline - switch to local mode
+      if (getDbMode() === 'supabase') {
+        console.log('Network offline - switching to local mode');
+        setDbMode('local');
+        window.location.reload();
+      }
+    },
+    () => {
+      // Coming back online - sync data then switch to supabase mode
+      if (getDbMode() === 'local') {
+        console.log('Network online - syncing local data to cloud...');
+        // Import dataSyncService dynamically to avoid circular dependency
+        import('./dataSyncService').then(({ dataSyncService }) => {
+          dataSyncService.syncLocalToSupabase().then((result) => {
+            if (result.success) {
+              console.log('Sync successful - switching to supabase mode');
+            } else {
+              console.warn('Sync completed with errors:', result.errors);
+            }
+            setDbMode('supabase');
+            window.location.reload();
+          });
+        });
+      }
+    }
+  );
 };
 
 // إنشاء العميل
