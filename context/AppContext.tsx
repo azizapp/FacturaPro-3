@@ -110,50 +110,73 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         document.documentElement.classList.toggle('dark', newTheme === 'dark');
     };
 
-    let isRefreshing = false;
+    // Track refresh promises to prevent duplicates but allow queuing
+    let refreshPromise: Promise<void> | null = null;
+    let lastRefreshTime = 0;
+    const MIN_REFRESH_INTERVAL = 2000; // Minimum 2 seconds between refreshes
     
     const refreshUserData = async () => {
-        // Prevent concurrent refreshes
-        if (isRefreshing) {
-            console.log('Refresh already in progress, skipping...');
+        const now = Date.now();
+            
+        // If minimum interval hasn't passed, skip
+        if (now - lastRefreshTime < MIN_REFRESH_INTERVAL) {
+            console.log('Too soon to refresh, skipping...');
             return;
         }
-        
-        isRefreshing = true;
-        
-        // On n'affiche le loader que si on n'a absolument rien à afficher
-        if (invoices.length === 0 && clients.length === 0) {
+            
+        // If already refreshing, return existing promise
+        if (refreshPromise) {
+            console.log('Refresh already in progress, waiting for completion...');
+            return refreshPromise;
+        }
+            
+        // Show loader only if no data exists
+        const shouldShowLoader = invoices.length === 0 && clients.length === 0;
+        if (shouldShowLoader) {
             setIsLoading(true);
         }
-
-        try {
-            // Synchronisation en arrière-plan via le service de sync
-            const freshData = await dataSyncService.initializeWithCache();
-            console.log('Data received in refreshUserData:', {
-                invoices: freshData.invoices.length,
-                clients: freshData.clients.length,
-                products: freshData.products.length
-            });
-            setInvoices(freshData.invoices);
-            setClients(freshData.clients);
-            setProducts(freshData.products);
-            console.log('State updated with new data');
-
-            if (freshData.company) {
-                setCompany(freshData.company);
-            } else if (!company) {
-                setCompany({
-                    id: '1', name: 'Ma Société', address: '123 Rue de la Paix',
-                    email: 'contact@example.com', phone: '0123456789', siret: '12345678901234',
-                    city: 'Paris', country: 'France'
+    
+        // Create new refresh promise
+        refreshPromise = (async () => {
+            try {
+                console.log('🔄 Starting data refresh...');
+                lastRefreshTime = now;
+                    
+                // Force fresh data fetch (bypass cache if too old)
+                const freshData = await dataSyncService.initializeWithCache();
+                    
+                console.log('📊 Data received:', {
+                    invoices: freshData.invoices.length,
+                    clients: freshData.clients.length,
+                    products: freshData.products.length
                 });
+                    
+                // Update state
+                setInvoices(freshData.invoices);
+                setClients(freshData.clients);
+                setProducts(freshData.products);
+                    
+                if (freshData.company) {
+                    setCompany(freshData.company);
+                } else if (!company) {
+                    setCompany({
+                        id: '1', name: 'Ma Société', address: '123 Rue de la Paix',
+                        email: 'contact@example.com', phone: '0123456789', siret: '12345678901234',
+                        city: 'Paris', country: 'France'
+                    });
+                }
+                    
+                console.log('✅ Data refresh completed successfully');
+            } catch (error) {
+                console.error("❌ Error during data refresh:", error);
+                // Don't show error to user, but log it
+            } finally {
+                setIsLoading(false);
+                refreshPromise = null;
             }
-        } catch (error) {
-            console.error("Erreur lors du rafraîchissement des données:", error);
-        } finally {
-            setIsLoading(false);
-            isRefreshing = false;
-        }
+        })();
+            
+        return refreshPromise;
     };
 
     const logout = async () => {

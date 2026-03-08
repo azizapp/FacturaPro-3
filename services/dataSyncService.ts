@@ -143,16 +143,21 @@ export class DataSyncService {
     return this.initializeWithCache();
   }
 
-  // Fetch from Supabase with timeout
-  private async fetchFromSupabase(): Promise<{
+  // Fetch from Supabase with retry mechanism and longer timeout
+  private async fetchFromSupabase(retryCount = 0): Promise<{
     invoices: Invoice[];
     clients: Client[];
     products: Product[];
     company: Company | null;
   }> {
+    const MAX_RETRIES = 3;
+    const TIMEOUT_MS = 15000; // Increased to 15 seconds
+    
     try {
+      console.log(`Attempt ${retryCount + 1}/${MAX_RETRIES} to fetch from Supabase`);
+      
       const timeoutPromise = new Promise<never>((_, reject) => 
-        setTimeout(() => reject(new Error('Fetch timeout')), 5000)
+        setTimeout(() => reject(new Error(`Fetch timeout after ${TIMEOUT_MS/1000} seconds`)), TIMEOUT_MS)
       );
 
       const dataPromise = Promise.all([
@@ -170,7 +175,7 @@ export class DataSyncService {
       // Save to localStorage
       this.saveCacheToStorage({ invoices, clients, products, company });
 
-      console.log('Data fetched from Supabase:', { 
+      console.log('✅ Data successfully fetched from Supabase:', { 
         invoices: invoices.length, 
         clients: clients.length, 
         products: products.length 
@@ -178,8 +183,16 @@ export class DataSyncService {
 
       return { invoices, clients, products, company };
     } catch (error) {
-      console.error('Error fetching from Supabase:', error);
-      return { invoices: [], clients: [], products: [], company: null };
+      console.error(`❌ Attempt ${retryCount + 1} failed:`, error);
+      
+      if (retryCount < MAX_RETRIES - 1) {
+        console.log(`🔁 Retrying in 2 seconds... (${retryCount + 1}/${MAX_RETRIES})`);
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        return this.fetchFromSupabase(retryCount + 1);
+      }
+      
+      console.error('❌ All retry attempts failed');
+      throw error;
     }
   }
 

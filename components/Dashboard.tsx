@@ -1,9 +1,10 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Invoice, Client, InvoiceStatus } from '../types';
 import { summarizeInvoices } from '../services/geminiService';
 import { useAppContext } from '../context/AppContext';
+import { getNetworkStatus } from '../services/supabaseClient';
 
 interface DashboardProps {
   invoices: Invoice[];
@@ -11,9 +12,42 @@ interface DashboardProps {
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ invoices, clients }) => {
-  const { theme, products } = useAppContext();
+  const { theme, products, refreshUserData } = useAppContext();
   const [aiAnalysis, setAiAnalysis] = useState<any>(null);
   const [analyzing, setAnalyzing] = useState(false);
+  const [networkStatus, setNetworkStatus] = useState<'online' | 'offline' | 'checking'>('checking');
+  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+
+  // Auto-refresh data every 30 seconds and check network status
+  useEffect(() => {
+    const checkNetwork = async () => {
+      setNetworkStatus('checking');
+      const status = await getNetworkStatus();
+      setNetworkStatus(status);
+    };
+
+    const refreshData = async () => {
+      try {
+        await refreshUserData();
+        setLastUpdate(new Date());
+        await checkNetwork();
+      } catch (error) {
+        console.error('Auto-refresh failed:', error);
+      }
+    };
+
+    // Initial load
+    refreshData();
+
+    // Set up intervals
+    const networkInterval = setInterval(checkNetwork, 10000); // Check network every 10 seconds
+    const refreshInterval = setInterval(refreshData, 30000); // Refresh data every 30 seconds
+
+    return () => {
+      clearInterval(networkInterval);
+      clearInterval(refreshInterval);
+    };
+  }, [refreshUserData]);
 
   const stats = useMemo(() => {
     const totalTtc = invoices.reduce((acc, inv) => acc + (inv.grandTotal || 0), 0);

@@ -29,6 +29,7 @@ const App: React.FC = () => {
 
   const [activeView, setActiveView] = useState<'dashboard' | 'invoices' | 'ledger' | 'clients' | 'products' | 'payments' | 'settings' | 'invoice-detail' | 'client-form' | 'invoice-form' | 'product-form'>('dashboard');
   const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
+  const [networkStatus, setNetworkStatus] = useState<'online' | 'offline' | 'checking'>('checking');
 
   const [showInvoicePdf, setShowInvoicePdf] = useState<string | string[] | null>(null);
   const [showClientStatementPdf, setShowClientStatementPdf] = useState<string | null>(null);
@@ -38,6 +39,21 @@ const App: React.FC = () => {
   const [showPaymentModal, setShowPaymentModal] = useState<string | null>(null);
 
   const [itemToDelete, setItemToDelete] = useState<{ id: string, type: 'invoice' | 'client' | 'payment' | 'product', invoiceId?: string } | null>(null);
+
+  // Monitor network status
+  useEffect(() => {
+    const updateNetworkStatus = async () => {
+      setNetworkStatus('checking');
+      const status = await getNetworkStatus();
+      setNetworkStatus(status ? 'online' : 'offline');
+    };
+
+    updateNetworkStatus();
+    
+    const interval = setInterval(updateNetworkStatus, 5000); // Check every 5 seconds
+    
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const handleResize = () => {
@@ -218,9 +234,17 @@ const App: React.FC = () => {
           </div>
           <div className="flex items-center space-x-4">
             {/* Network Status Indicator */}
-            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-bold ${getNetworkStatus() ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-500 border border-amber-500/20'}`}>
-              <div className={`w-1.5 h-1.5 rounded-full ${getNetworkStatus() ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`}></div>
-              {getNetworkStatus() ? 'Connecté' : 'Hors ligne'}
+            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-bold ${
+              networkStatus === 'online' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 
+              networkStatus === 'checking' ? 'bg-blue-500/10 text-blue-500 border border-blue-500/20' : 
+              'bg-amber-500/10 text-amber-500 border border-amber-500/20'
+            }`}>
+              <div className={`w-1.5 h-1.5 rounded-full ${
+                networkStatus === 'online' ? 'bg-emerald-500 animate-pulse' : 
+                networkStatus === 'checking' ? 'bg-blue-500 animate-pulse' : 
+                'bg-amber-500'
+              }`}></div>
+              {networkStatus === 'online' ? 'Connecté' : networkStatus === 'checking' ? 'Vérification...' : 'Hors ligne'}
             </div>
             <button onClick={toggleTheme} className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${theme === 'dark' ? 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`}>
               <i className={`fas ${theme === 'dark' ? 'fa-sun' : 'fa-moon'}`}></i>
